@@ -132,6 +132,15 @@ mark{background:var(--gold-soft);color:inherit;border-radius:2px}
 .video{position:relative;aspect-ratio:16/9;max-width:100%;background:#000;border-radius:8px;overflow:hidden}
 .video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .vnote{font-size:13px;color:var(--ink-2);margin:8px 0 0}
+.fbvideo{position:relative;width:min(100%,360px);aspect-ratio:9/16;margin:0 auto;background:#000;border-radius:8px;overflow:hidden}
+.fbvideo iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.sang{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.sang li{display:flex;flex-direction:column;gap:4px;align-items:flex-start;padding-bottom:12px;border-bottom:1px solid var(--rule);min-width:0}
+.sang li:last-child{border-bottom:0;padding-bottom:0}
+.sang a{color:var(--ink);font-weight:600;overflow-wrap:anywhere}
+.sang .m{font-size:12.5px;color:var(--ink-2)}
+.sang .fbbtn{padding:6px 12px;font-size:13px;margin-top:4px}
+.fbslot{margin-top:8px;max-width:100%;overflow:hidden}
 .links{display:flex;flex-direction:column;gap:6px}
 .links a{color:var(--ink);font-size:14.5px;overflow-wrap:anywhere}
 .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
@@ -246,9 +255,9 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-block:22px calc(
 </svg>
 </template>
 
-<script src="config.js?v=202611180055"></script>
-<script src="data/penerbitan.js?v=202611180055"></script>
-<script src="data/arkib.js?v=202611180055"></script>
+<script src="config.js?v=202611180115"></script>
+<script src="data/penerbitan.js?v=202611180115"></script>
+<script src="data/arkib.js?v=202611180115"></script>
 <script>
 (function(){
 const A = window.ARKIB, C = window.ARKIB_CONFIG || {};
@@ -268,7 +277,7 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 const hl = s => { const t = esc(s); if (!st.q) return t; const q = esc(st.q).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); return t.replace(new RegExp("(" + q + ")", "gi"), "<mark>$1</mark>"); };
 const fmt = sec => { sec = Math.max(0, sec|0); const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), s = sec%60; return (h ? h + ":" + String(m).padStart(2,"0") : m) + ":" + String(s).padStart(2,"0"); };
 const pill = v => v ? `<span class="v ${VC[v]}">${esc(v)}</span>` : `<span class="v v-none">Belum disemak</span>`;
-const hasClip = c => !!c.s.yt;
+const hasClip = c => !!(c.s.yt || c.s.fb);
 const siteUrl = () => (C.siteUrl || location.href.split("#")[0]);
 // Link kongsi: halaman d/<ID>/ ada pratonton kad untuk Threads/WhatsApp (versi claude.ai guna #hash)
 const claimUrl = id => ART ? siteUrl() + "#d-" + id : siteUrl() + "d/" + id + "/";
@@ -363,7 +372,7 @@ function listHTML(){
   }
   order.forEach(s => {
     const cs = hits.filter(c => c.s === s); if (!cs.length) return;
-    h += `<div class="src-h"><h2>${esc(s.tajuk)}</h2><span class="meta">${esc(s.id)} · ${esc(s.tarikh)}${s.yt ? " · ▶ YouTube" : ""}</span></div><ul class="rows">${cs.map(rowHTML).join("")}</ul>`;
+    h += `<div class="src-h"><h2>${esc(s.tajuk)}</h2><span class="meta">${esc(s.id)} · ${esc(s.tarikh)}${s.yt ? " · ▶ YouTube" : s.fb ? " · ▶ Facebook" : ""}</span></div><ul class="rows">${cs.map(rowHTML).join("")}</ul>`;
   });
   return h;
 }
@@ -395,8 +404,32 @@ function viewHome(fatal){
   if (!fatal) startBubbles();
 }
 
+// Sanggahan The Patriots: hantaran Facebook boleh dibuka terus (dimuat hanya bila diklik)
+const isFb = u => /facebook\.com\/(photo|reel|watch|[^/]+\/posts)/.test(u);
+function sangHTML(d){
+  if (!d.sang) return "";
+  return `<section class="sec panel"><h3>Sanggahan The Patriots</h3><ul class="sang">${d.sang.map((x, i) => `<li>
+    <a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.tajuk)} ↗</a>
+    <span class="m">${esc(x.jenis === "bacaan" ? "Bacaan berkaitan" : "Sanggahan")} · ${esc(x.platform)}${x.penulis ? " · " + esc(x.penulis) : ""}${x.tarikh ? " · " + esc(x.tarikh) : ""}</span>
+    ${isFb(x.url) && !ART ? `<button class="btn alt fbbtn" type="button" data-fb="${esc(x.url)}">Papar di sini</button><div class="fbslot" hidden></div>` : ""}
+  </li>`).join("")}</ul><p class="vnote">Hantaran Facebook dimuatkan daripada Facebook hanya selepas anda klik “Papar di sini”.</p></section>`;
+}
+function bindSang(){
+  document.querySelectorAll(".fbbtn").forEach(b => b.addEventListener("click", () => {
+    const slot = b.nextElementSibling;
+    if (!slot.hidden){ slot.hidden = true; slot.innerHTML = ""; b.textContent = "Papar di sini"; return; }
+    const w = Math.max(350, Math.min(500, slot.parentElement.clientWidth - 4));
+    slot.innerHTML = `<iframe title="Hantaran Facebook" src="https://www.facebook.com/plugins/post.php?href=${encodeURIComponent(b.dataset.fb)}&show_text=true&width=${w}" width="${w}" height="760" style="border:0;overflow:hidden;max-width:100%;background:#fff;border-radius:8px" scrolling="no" frameborder="0" allowfullscreen allow="encrypted-media; picture-in-picture; web-share"></iframe>`;
+    slot.hidden = false; b.textContent = "Tutup hantaran";
+  }));
+}
 function videoHTML(c){
   const s = c.s;
+  if (!s.yt && s.fb && !ART){
+    const href = encodeURIComponent("https://www.facebook.com/watch/?v=" + s.fb);
+    return `<div class="panel"><div class="fbvideo"><iframe title="Klip Facebook: ${esc(s.tajuk)}" src="https://www.facebook.com/plugins/video.php?href=${href}&show_text=false&width=360" loading="lazy" scrolling="no" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture; web-share"></iframe></div>
+      <p class="vnote">Klip dimainkan daripada Facebook. Cap masa tepat tak boleh ditetapkan untuk video Facebook. <a href="https://www.facebook.com/watch/?v=${esc(s.fb)}" target="_blank" rel="noopener">Buka di Facebook ↗</a></p></div>`;
+  }
   if (!s.yt){
     const first = s.links[0];
     return `<div class="panel"><h3>Klip</h3><p class="empty">Klip ini bukan di YouTube, jadi tak boleh dimainkan di sini.</p>${first ? `<div class="btns"><a class="btn" href="${esc(first.u)}" target="_blank" rel="noopener">Buka ${esc(first.l)} ↗</a></div>` : ""}</div>`;
@@ -439,6 +472,7 @@ function viewDetail(id){
     ${d.ruj ? `<div class="ruj"><span class="ruj-h">Bukti &amp; rujukan</span>${d.ruj.map(r => `<a href="${esc(r.u)}" target="_blank" rel="noopener">${esc(r.l)} ↗</a>`).join("")}</div>` : ""}
     <div class="grid2">
       <div>${videoHTML(c)}
+        ${sangHTML(d)}
         <section class="sec panel"><h3>Pembahasan</h3>${pemb || `<p class="empty">Belum ada pembahasan yang diluluskan untuk dakwaan ini.</p>`}
           <div class="btns">${purl ? `<a class="btn" href="${esc(purl)}" target="_blank" rel="noopener">Hantar pembahasan ↗</a>` : `<span class="empty">Borang pembahasan belum disambungkan.</span>`}</div>
           <p class="vnote">Pembahasan disemak dahulu sebelum dipaparkan. Sertakan sumber (buku, jurnal, manuskrip, link).</p></section>
@@ -451,8 +485,6 @@ function viewDetail(id){
           <div class="links" style="margin-top:10px">${s.links.map(l => `<a href="${esc(l.u)}" target="_blank" rel="noopener">${esc(l.l)} ↗</a>`).join("") || `<span class="empty">Link asal belum dikenal pasti.</span>`}</div>
           <div class="btns" style="margin-top:12px"><button class="btn alt" id="copy">Salin link</button><a class="btn alt" href="${threads}" target="_blank" rel="noopener">Kongsi ke Threads ↗</a>${ART ? "" : `<a class="btn alt" href="d/${esc(id)}/kad.jpg" target="_blank" rel="noopener">Kad gambar ↗</a>`}</div>
         </div>
-        ${d.sang ? `<div class="panel sec"><h3>Sanggahan The Patriots</h3><ul class="sib">${d.sang.map(x =>
-          `<li><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.tajuk)} ↗<br><span class="m" style="font-size:12.5px;color:var(--ink-2)">${esc(x.jenis === "bacaan" ? "Bacaan berkaitan" : "Sanggahan")} · ${esc(x.platform)}${x.penulis ? " · " + esc(x.penulis) : ""}${x.tarikh ? " · " + esc(x.tarikh) : ""}</span></a></li>`).join("")}</ul></div>` : ""}
         ${relPubs(id)}
         <div class="panel sec"><h3>Dakwaan lain dalam sumber ini</h3><ul class="sib">${sibs}</ul></div>
       </aside>
@@ -462,6 +494,7 @@ function viewDetail(id){
     catch { e.target.textContent = claimUrl(id); }
   });
   loadGiscus(id);
+  bindSang();
   window.scrollTo(0, 0);
 }
 async function artifactComments(box){
