@@ -1,0 +1,41 @@
+name: Hantar pembahasan dakwaan
+description: Bawa bukti yang menyokong atau mematahkan satu dakwaan dalam arkib.
+title: "[Pembahasan] "
+labels: ["pembahasan"]
+body:
+  - type: input
+    id: id_dakwaan
+    attributes:
+      label: ID dakwaan
+      description: Contoh S01-23 (tertera di halaman dakwaan).
+    validations:
+      required: true
+  - type: dropdown
+    id: pendirian
+    attributes:
+      label: Pembahasan ini
+      options:
+        - Mematahkan dakwaan
+        - Menyokong dakwaan
+        - Membetulkan transkrip / cap masa
+        - Penjelasan daripada pihak yang membuat dakwaan
+    validations:
+      required: true
+  - type: textarea
+    id: hujah
+    attributes:
+      label: Hujah
+      description: Terangkan dengan ringkas. Bincang dakwaan, bukan peribadi.
+    validations:
+      required: true
+  - type: textarea
+    id: sumber
+    attributes:
+      label: Sumber
+      description: Buku (dengan halaman), artikel jurnal, manuskrip, atau link.
+    validations:
+      required: true
+  - type: input
+    id: nama
+    attributes:
+      label: Nama untuk dipaparkan (pilihan)
