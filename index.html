@@ -270,9 +270,9 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-block:22px calc(
 </svg>
 </template>
 
-<script src="config.js?v=202611180211"></script>
-<script src="data/penerbitan.js?v=202611180211"></script>
-<script src="data/arkib.js?v=202611180211"></script>
+<script src="config.js?v=202611180215"></script>
+<script src="data/penerbitan.js?v=202611180215"></script>
+<script src="data/arkib.js?v=202611180215"></script>
 <script>
 (function(){
 const A = window.ARKIB, C = window.ARKIB_CONFIG || {};
@@ -292,7 +292,7 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 const hl = s => { const t = esc(s); if (!st.q) return t; const q = esc(st.q).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); return t.replace(new RegExp("(" + q + ")", "gi"), "<mark>$1</mark>"); };
 const fmt = sec => { sec = Math.max(0, sec|0); const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), s = sec%60; return (h ? h + ":" + String(m).padStart(2,"0") : m) + ":" + String(s).padStart(2,"0"); };
 const pill = v => v ? `<span class="v ${VC[v]}">${esc(v)}</span>` : `<span class="v v-none">Belum disemak</span>`;
-const hasClip = c => !!(c.s.yt || c.s.fb);
+const hasClip = c => !!(c.s.yt || c.s.fb || c.s.tt);
 const siteUrl = () => (C.siteUrl || location.href.split("#")[0]);
 // Link kongsi: halaman d/<ID>/ ada pratonton kad untuk Threads/WhatsApp (versi claude.ai guna #hash)
 const claimUrl = id => ART ? siteUrl() + "#d-" + id : siteUrl() + "d/" + id + "/";
@@ -387,7 +387,7 @@ function listHTML(){
   }
   order.forEach(s => {
     const cs = hits.filter(c => c.s === s); if (!cs.length) return;
-    h += `<div class="src-h"><h2>${esc(s.tajuk)}</h2><span class="meta">${esc(s.id)} · ${esc(s.tarikh)}${s.yt ? " · ▶ YouTube" : s.fb ? " · ▶ Facebook" : ""}</span></div><ul class="rows">${cs.map(rowHTML).join("")}</ul>`;
+    h += `<div class="src-h"><h2>${esc(s.tajuk)}</h2><span class="meta">${esc(s.id)} · ${esc(s.tarikh)}${s.yt ? " · ▶ YouTube" : s.fb ? " · ▶ Facebook" : s.tt ? " · ▶ TikTok" : ""}</span></div><ul class="rows">${cs.map(rowHTML).join("")}</ul>`;
   });
   return h;
 }
@@ -440,6 +440,12 @@ function bindSang(){
 }
 function videoHTML(c){
   const s = c.s;
+  if (!s.yt && s.tt){
+    const url = `https://www.tiktok.com/@solehah_yaacob/video/${esc(s.tt)}`;
+    if (ART) return `<div class="panel"><h3>Klip</h3><div class="btns"><a class="btn" href="${url}" target="_blank" rel="noopener">▶ Tonton di TikTok ↗</a></div></div>`;
+    return `<div class="panel"><div class="ttvideo" style="margin:0 auto"><iframe title="Klip TikTok: ${esc(s.tajuk)}" src="https://www.tiktok.com/player/v1/${esc(s.tt)}?description=1&rel=0" loading="lazy" allow="fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+      <p class="vnote">Klip dimainkan daripada TikTok. <a href="#tiktok">Cari dalam semua video TikTok beliau</a> · <a href="${url}" target="_blank" rel="noopener">Buka di TikTok ↗</a></p></div>`;
+  }
   if (!s.yt && s.fb && !ART){
     const href = encodeURIComponent("https://www.facebook.com/watch/?v=" + s.fb);
     return `<div class="panel"><div class="fbvideo"><iframe title="Klip Facebook: ${esc(s.tajuk)}" src="https://www.facebook.com/plugins/video.php?href=${href}&show_text=false&width=360" loading="lazy" scrolling="no" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture; web-share"></iframe></div>
