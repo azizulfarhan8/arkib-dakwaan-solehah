@@ -246,9 +246,9 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-block:22px calc(
 </svg>
 </template>
 
-<script src="config.js?v=202611171537"></script>
-<script src="data/penerbitan.js?v=202611171537"></script>
-<script src="data/arkib.js?v=202611171537"></script>
+<script src="config.js?v=202611171538"></script>
+<script src="data/penerbitan.js?v=202611171538"></script>
+<script src="data/arkib.js?v=202611171538"></script>
 <script>
 (function(){
 const A = window.ARKIB, C = window.ARKIB_CONFIG || {};
@@ -451,6 +451,8 @@ function viewDetail(id){
           <div class="links" style="margin-top:10px">${s.links.map(l => `<a href="${esc(l.u)}" target="_blank" rel="noopener">${esc(l.l)} ↗</a>`).join("") || `<span class="empty">Link asal belum dikenal pasti.</span>`}</div>
           <div class="btns" style="margin-top:12px"><button class="btn alt" id="copy">Salin link</button><a class="btn alt" href="${threads}" target="_blank" rel="noopener">Kongsi ke Threads ↗</a>${ART ? "" : `<a class="btn alt" href="d/${esc(id)}/kad.jpg" target="_blank" rel="noopener">Kad gambar ↗</a>`}</div>
         </div>
+        ${d.sang ? `<div class="panel sec"><h3>Sanggahan The Patriots</h3><ul class="sib">${d.sang.map(x =>
+          `<li><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.tajuk)} ↗<br><span class="m" style="font-size:12.5px;color:var(--ink-2)">${esc(x.jenis === "bacaan" ? "Bacaan berkaitan" : "Sanggahan")} · ${esc(x.platform)}${x.penulis ? " · " + esc(x.penulis) : ""}${x.tarikh ? " · " + esc(x.tarikh) : ""}</span></a></li>`).join("")}</ul></div>` : ""}
         ${relPubs(id)}
         <div class="panel sec"><h3>Dakwaan lain dalam sumber ini</h3><ul class="sib">${sibs}</ul></div>
       </aside>
