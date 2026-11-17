@@ -141,6 +141,20 @@ mark{background:var(--gold-soft);color:inherit;border-radius:2px}
 .sang .m{font-size:12.5px;color:var(--ink-2)}
 .sang .fbbtn{padding:6px 12px;font-size:13px;margin-top:4px}
 .fbslot{margin-top:8px;max-width:100%;overflow:hidden}
+.tts{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.tt{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;min-width:0}
+.tt-h{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
+.tt-d{font:20px/1 var(--f-old);color:var(--gold)}
+.tt .m{font:12.5px var(--f-mono);color:var(--ink-2)}
+.tt-ti{margin:6px 0 4px;overflow-wrap:anywhere}
+.tt-snip{margin:4px 0 6px;font-size:14px;color:var(--ink-2);border-left:3px solid var(--gold);padding-left:10px;overflow-wrap:anywhere}
+.tt .btns{align-items:center}.tt .btns a{font-size:13.5px}
+.tt .btn.alt{padding:6px 12px;font-size:13.5px}
+.tt-slot{margin-top:10px}
+.ttvideo{position:relative;width:min(100%,325px);aspect-ratio:325/578;background:#000;border-radius:8px;overflow:hidden}
+.ttvideo iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.tt-tx{margin-top:10px;max-height:340px;overflow:auto;padding:10px 12px;border:1px solid var(--rule);border-radius:6px;font-size:14.5px;line-height:1.65}
+.tt-tx p{margin:0 0 6px;overflow-wrap:anywhere}
 .links{display:flex;flex-direction:column;gap:6px}
 .links a{color:var(--ink);font-size:14.5px;overflow-wrap:anywhere}
 .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
@@ -194,6 +208,7 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-block:22px calc(
   <nav aria-label="Utama">
     <a href="#" data-r="home">Dakwaan</a>
     <a href="#fatal" data-r="fatal">50 Paling Fatal</a>
+    <a href="#tiktok" data-r="tiktok">TikTok</a>
     <a href="#penerbitan" data-r="penerbitan">Penerbitan</a>
     <a href="#kronologi" data-r="kronologi">Kronologi</a>
     <a href="#tentang" data-r="tentang">Tentang</a>
@@ -255,9 +270,9 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-block:22px calc(
 </svg>
 </template>
 
-<script src="config.js?v=202611180115"></script>
-<script src="data/penerbitan.js?v=202611180115"></script>
-<script src="data/arkib.js?v=202611180115"></script>
+<script src="config.js?v=202611180123"></script>
+<script src="data/penerbitan.js?v=202611180123"></script>
+<script src="data/arkib.js?v=202611180123"></script>
 <script>
 (function(){
 const A = window.ARKIB, C = window.ARKIB_CONFIG || {};
@@ -596,6 +611,83 @@ function viewPdf(id){
   }
   window.scrollTo(0, 0);
 }
+// ---- TikTok: semua video beliau, transkrip boleh dicari (data dimuat hanya bila halaman dibuka) ----
+const tst = {q:"", tahun:"", susun:"baru", tx:false, n:30};
+function loadTikTok(cb){
+  if (window.TIKTOK) return cb();
+  const v = (document.querySelector('script[src^="data/arkib.js"]')?.getAttribute("src").split("v=")[1]) || "0";
+  const s = document.createElement("script"); s.src = "data/tiktok.js?v=" + v;
+  s.onload = cb; s.onerror = () => { app.innerHTML = `<div class="wrap prose"><p class="empty">Data TikTok belum tersedia.</p></div>`; };
+  document.head.appendChild(s);
+}
+const fmtDur = s => s >= 3600 ? fmt(s) : `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
+const fmtViews = n => n >= 1e6 ? (n/1e6).toFixed(1) + "J" : n >= 1e3 ? (n/1e3).toFixed(n >= 1e4 ? 0 : 1) + "K" : String(n);
+const fmtDate = t => { if (!t) return "Tarikh tak pasti"; const [y,m,d] = t.split("-"); return `${+d} ${["Jan","Feb","Mac","Apr","Mei","Jun","Jul","Ogos","Sep","Okt","Nov","Dis"][+m-1]} ${y}`; };
+function ttHits(){
+  const q = tst.q.toLowerCase();
+  let r = window.TIKTOK.filter(v => (!tst.tahun || v.t.startsWith(tst.tahun)) && (!tst.tx || v.tx) &&
+    (!q || (v.ti + " " + v.tx).toLowerCase().includes(q)));
+  if (tst.susun === "lama") r = [...r].reverse();
+  else if (tst.susun === "tonton") r = [...r].sort((a,b) => b.v - a.v);
+  return r;
+}
+function ttSnippet(v){
+  if (!tst.q || !v.tx) return "";
+  const i = v.tx.toLowerCase().indexOf(tst.q.toLowerCase()); if (i < 0) return "";
+  const a = Math.max(0, i - 110), b = Math.min(v.tx.length, i + tst.q.length + 140);
+  return `<p class="tt-snip">${a ? "…" : ""}${hl(v.tx.slice(a, b))}${b < v.tx.length ? "…" : ""}</p>`;
+}
+function ttCard(v){
+  return `<li class="tt" id="tt-${v.id}">
+    <div class="tt-h"><span class="tt-d">${fmtDate(v.t)}</span><span class="m">${fmtDur(v.d)} · ${fmtViews(v.v)} tontonan · @${esc(v.a)}</span></div>
+    <p class="tt-ti">${hl(v.ti || "(tiada kapsyen)")}</p>${ttSnippet(v)}
+    <div class="btns"><button class="btn alt" type="button" data-play="${v.id}">▶ Tonton</button>
+      ${v.tx ? `<button class="btn alt" type="button" data-tx="${v.id}">Transkrip</button>` : `<span class="m">Transkrip belum ada</span>`}
+      <a href="https://www.tiktok.com/@${esc(v.a)}/video/${v.id}" target="_blank" rel="noopener">Buka di TikTok ↗</a></div>
+    <div class="tt-slot" hidden></div>
+    ${v.tx ? `<div class="tt-tx" hidden><p>${hl(v.tx)}</p><p class="vnote">${v.s === "whisper" ? "Transkrip automatik (Whisper)." : "Sari kata automatik TikTok."} Mungkin ada salah eja.</p></div>` : ""}
+  </li>`;
+}
+function ttList(){
+  const r = ttHits(), shown = r.slice(0, tst.n);
+  const jam = Math.round(window.TIKTOK.reduce((s, v) => s + v.d, 0) / 3600);
+  return `<p class="count">${r.length} daripada ${window.TIKTOK.length} video (${jam} jam)${tst.q ? ` mengandungi “${esc(tst.q)}”` : ""}</p>
+    <ul class="tts">${shown.map(ttCard).join("")}</ul>
+    ${r.length > tst.n ? `<div class="btns" style="justify-content:center;margin:18px 0"><button class="btn" id="ttmore" type="button">Tunjuk ${Math.min(30, r.length - tst.n)} lagi</button></div>` : ""}`;
+}
+function viewTikTok(){
+  st.q = tst.q;
+  app.innerHTML = `<div class="wrap prose" style="padding-bottom:0;max-width:none"><div class="eyebrow" style="margin-top:28px">Video pendek</div>
+    <h1 style="font-size:clamp(32px,5vw,52px)">TikTok Solehah Yaacob</h1>
+    <p class="lede" style="max-width:62ch">Semua video di akaun @solehah_yaacob dan @prof.solehah, dengan transkrip yang boleh dicari. Cari satu perkataan untuk jumpa video yang menyebutnya.</p></div>
+  <div class="wrap"><p class="empty" id="ttload">Memuatkan senarai video…</p></div>`;
+  loadTikTok(() => {
+    const years = [...new Set(window.TIKTOK.map(v => v.t.slice(0,4)).filter(Boolean))].sort().reverse();
+    app.querySelector(".wrap:last-child").innerHTML = `<div class="tools">
+      <input type="search" id="tq" placeholder="Cari dalam transkrip: Keturah, Rom, meteor, Hang Tuah…" aria-label="Cari video TikTok" value="${esc(tst.q)}"></div>
+      <div class="tools filters">
+        <label class="fl">Susun<select id="ts"><option value="baru">Terbaru dahulu</option><option value="lama">Terlama dahulu</option><option value="tonton">Paling ramai tonton</option></select></label>
+        <label class="fl">Tahun<select id="ty"><option value="">Semua</option>${years.map(y => `<option>${y}</option>`).join("")}</select></label>
+        <label class="tog"><input type="checkbox" id="tx"${tst.tx ? " checked" : ""}> Ada transkrip</label>
+      </div><div id="ttlist">${ttList()}</div>`;
+    document.getElementById("ts").value = tst.susun; document.getElementById("ty").value = tst.tahun;
+    let timer;
+    const re = () => { st.q = tst.q; document.getElementById("ttlist").innerHTML = ttList(); };
+    document.getElementById("tq").addEventListener("input", e => { clearTimeout(timer); timer = setTimeout(() => { tst.q = e.target.value.trim(); tst.n = 30; re(); }, 250); });
+    document.getElementById("ts").addEventListener("change", e => { tst.susun = e.target.value; tst.n = 30; re(); });
+    document.getElementById("ty").addEventListener("change", e => { tst.tahun = e.target.value; tst.n = 30; re(); });
+    document.getElementById("tx").addEventListener("change", e => { tst.tx = e.target.checked; tst.n = 30; re(); });
+    document.getElementById("ttlist").addEventListener("click", e => {
+      const more = e.target.closest("#ttmore"); if (more){ tst.n += 30; re(); return; }
+      const p = e.target.closest("[data-play]");
+      if (p){ const slot = p.closest("li").querySelector(".tt-slot");
+        if (slot.hidden){ slot.innerHTML = ART ? `<p class="empty">Video tak boleh dimainkan dalam versi ini. Guna “Buka di TikTok”.</p>` : `<div class="ttvideo"><iframe title="Video TikTok" src="https://www.tiktok.com/player/v1/${p.dataset.play}?description=1&rel=0" allow="fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>`; slot.hidden = false; p.textContent = "Tutup video"; }
+        else { slot.hidden = true; slot.innerHTML = ""; p.textContent = "▶ Tonton"; } return; }
+      const t = e.target.closest("[data-tx]");
+      if (t){ const box = t.closest("li").querySelector(".tt-tx"); box.hidden = !box.hidden; t.textContent = box.hidden ? "Transkrip" : "Tutup transkrip"; }
+    });
+  });
+}
 function viewKronologi(){
   app.innerHTML = `<div class="wrap prose"><div class="eyebrow" style="margin-top:28px">Garis masa</div><h1 style="font-size:clamp(32px,5vw,52px)">Kronologi</h1>
   <ol class="tl">${A.kronologi.map(([d,e]) => `<li><b>${esc(d)}</b>${esc(e)}</li>`).join("")}</ol></div>`;
@@ -626,6 +718,7 @@ function route(){
   if (r === "detail") viewDetail(h.slice(2));
   else if (r === "pdf") viewPdf(h.slice(2));
   else if (r === "penerbitan") viewPenerbitan();
+  else if (r === "tiktok") viewTikTok();
   else if (r === "fatal") viewHome(true);
   else if (r === "kronologi") viewKronologi();
   else if (r === "tentang") viewTentang();
