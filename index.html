@@ -305,9 +305,9 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-block:22px calc(
 </svg>
 </template>
 
-<script src="config.js?v=202611182045"></script>
-<script src="data/penerbitan.js?v=202611182045"></script>
-<script src="data/arkib.js?v=202611182045"></script>
+<script src="config.js?v=202611182054"></script>
+<script src="data/penerbitan.js?v=202611182054"></script>
+<script src="data/arkib.js?v=202611182054"></script>
 <script>
 (function(){
 const A = window.ARKIB, C = window.ARKIB_CONFIG || {};
@@ -620,7 +620,9 @@ function viewDetail(id){
     <div class="crumb"><a href="#">${L("Semua dakwaan","All claims")}</a> / ${esc(s.id)} · ${esc(sF(s, "tarikh"))} / <b>${esc(id)}</b>${d.fatal ? ` · <span class="fatalno">FATAL #${d.fatal}</span>` : ""}</div>
     <blockquote class="claim-q">${esc(tx)}</blockquote>
     ${EN() && d.en ? `<p class="orig" lang="ms"><b>Original (Malay)</b>${esc(d.t)}</p>` : ""}
-    <div class="verdict-box">${pill(d.v)}<p>${note ? esc(note) : (d.v ? "" : L("Dakwaan ini belum disemak. Ada sumber yang membuktikan atau mematahkannya? Hantar pembahasan.","This claim has not been checked yet. Have a source that proves or refutes it? Send a rebuttal."))}</p></div>
+    <div class="verdict-box">${pill(d.v)}<p>${note ? esc(note) : (d.v ? "" : L("Dakwaan ini belum disemak. Ada sumber yang membuktikan atau mematahkannya? Hantar pembahasan.","This claim has not been checked yet. Have a source that proves or refutes it? Send a rebuttal."))}${d.awal ? `<br><span class="vnote" style="font-style:italic">${L("Semakan awal oleh pasukan arkib; belum disahkan oleh pakar bidang. Ada pembetulan? Hantar pembahasan.","Preliminary check by the archive team; not yet confirmed by a subject expert. Have a correction? Send a rebuttal.")}</span>` : ""}</p></div>
+    ${d.p ? `<p class="orig" lang="ms"><b>${L("Petikan transkrip","Transcript excerpt")}</b>“${esc(d.p)}”</p>` : ""}
+    ${d.ulang ? `<p class="orig"><b>${L("Turut disebut dalam","Also said in")} ${d.ulang.length} ${L("video lain","other videos")}</b>${d.ulang.slice(0, 12).map((u, k) => `<a href="https://www.tiktok.com/@solehah_yaacob/video/${esc(u.tt)}" target="_blank" rel="noopener" title="${esc(u.p || "")}">TikTok ${k + 1} ↗</a>`).join(" · ")}${d.ulang.length > 12 ? " …" : ""}</p>` : ""}
     ${d.ruj ? `<div class="ruj"><span class="ruj-h">${L("Bukti &amp; rujukan","Evidence &amp; references")}</span>${d.ruj.map(r => `<a href="${esc(r.u)}" target="_blank" rel="noopener">${esc(EN() && r.le ? r.le : r.l)} ↗</a>`).join("")}</div>` : ""}
     <div class="grid2">
       <div>${videoHTML(c)}
