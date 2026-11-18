@@ -15,5 +15,5 @@ window.ARKIB_CONFIG = {
   // nilai medan ID dakwaan dengan {ID}. Contoh:
   // "https://docs.google.com/forms/d/e/XXXX/viewform?usp=pp_url&entry.123456={ID}"
   // Jika kosong, butang akan buka GitHub Issue (perlu akaun GitHub).
-  borangPembahasan: ""
+  borangPembahasan: "https://docs.google.com/forms/d/e/1FAIpQLSfJX3GreiL7FKP_nekTbLTfbP_XpezbHebL7DYkpsq1g9_FqA/viewform?usp=pp_url&entry.2014810699={ID}"
 };

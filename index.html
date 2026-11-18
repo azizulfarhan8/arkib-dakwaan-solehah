@@ -55,6 +55,11 @@ button,input,select{font:inherit;color:inherit}
 .nav nav{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
 .nav nav a{text-decoration:none;font-size:14.5px;font-weight:600;color:var(--ink-2);padding:6px 10px;border-radius:6px}
 .nav nav a[aria-current="page"]{color:var(--ink);background:var(--gold-soft)}
+.lang{display:inline-flex;border:1px solid var(--rule);border-radius:7px;overflow:hidden;flex:none}
+.lang button{border:0;background:transparent;padding:5px 9px;font:600 12px/1 var(--f-mono);letter-spacing:.06em;color:var(--ink-2);cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.orig{margin:-8px 0 16px;font-size:14px;color:var(--ink-2);max-width:68ch}
+.orig b{font:600 11px/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;margin-right:6px}
 
 /* hero */
 .hero{position:relative;border-bottom:1px solid var(--rule);overflow:hidden;background:var(--sea)}
@@ -213,13 +218,12 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-block:22px calc(
     <a href="#kronologi" data-r="kronologi">Kronologi</a>
     <a href="#tentang" data-r="tentang">Tentang</a>
   </nav>
+  <div class="lang" role="group" aria-label="Bahasa / Language"><button type="button" data-lang="ms" lang="ms" title="Bahasa Melayu">BM</button><button type="button" data-lang="en" lang="en" title="English">EN</button></div>
 </div></header>
 
 <main id="app"></main>
 
-<footer><div class="wrap">
-  Arkib ini mengumpul kenyataan awam Solehah Yaacob dan semakan fakta terhadapnya, dengan link kepada sumber asal. Klip dimainkan daripada YouTube; hak cipta video kekal milik pemilik saluran. <a href="#tentang">Kaedah &amp; hak menjawab</a>. Dikemas kini <span id="upd"></span>.
-</div></footer>
+<footer><div class="wrap" id="foot"></div></footer>
 
 <template id="map-tpl">
 <svg class="map" viewBox="0 0 1000 560" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Peta lama gaya Ptolemy: Aurea Chersonesus (Semenanjung Emas)">
@@ -270,14 +274,28 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-block:22px calc(
 </svg>
 </template>
 
-<script src="config.js?v=202611180718"></script>
-<script src="data/penerbitan.js?v=202611180718"></script>
-<script src="data/arkib.js?v=202611180718"></script>
+<script src="config.js?v=202611181051"></script>
+<script src="data/penerbitan.js?v=202611181051"></script>
+<script src="data/arkib.js?v=202611181051"></script>
 <script>
 (function(){
 const A = window.ARKIB, C = window.ARKIB_CONFIG || {};
 const ART = window.ARKIB_MODE === "artifact"; // versi claude.ai: tiada iframe luar, komen melalui claude.ai
-const T = A.tema;
+// ---- Dwibahasa: BM bahasa utama; EN pilihan pembaca (diingat dalam pelayar, atau ?lang=en) ----
+let LANG = "ms";
+try { if (localStorage.getItem("arkib-lang") === "en") LANG = "en"; } catch {}
+const qLang = new URLSearchParams(location.search).get("lang");
+if (qLang === "en" || qLang === "ms") LANG = qLang;
+const EN = () => LANG === "en";
+const L = (ms, en) => EN() ? en : ms;
+const VL = {"Salah":"False","Tak disokong":"Unsupported","Belum dapat disahkan":"Unverified","Sebahagian betul":"Partly true","Betul":"True"};
+const BLN = {Mac:"Mar", Mei:"May", Ogos:"Aug", Okt:"Oct", Dis:"Dec"};
+const tgl = s => EN() ? String(s ?? "").replace(/\b(Mac|Mei|Ogos|Okt|Dis)\b/g, m => BLN[m]).replace(/Tarikh tak pasti/, "Date uncertain") : s;
+const tD = d => EN() && d.en ? d.en.t : d.t;                       // teks dakwaan
+const nD = d => EN() && d.en && d.en.n ? d.en.n : d.n;             // nota semakan
+const sF = (s, k) => EN() && s.en && s.en[k] ? s.en[k] : (k === "tarikh" ? tgl(s[k]) : s[k]); // tajuk/platform/tarikh/nota sumber
+const vL = v => EN() ? (VL[v] || v) : v;
+const tema = () => EN() && A.tema_en ? A.tema_en : A.tema;
 const VC = {"Salah":"v-salah","Tak disokong":"v-tak","Belum dapat disahkan":"v-belum","Sebahagian betul":"v-seb","Betul":"v-betul"};
 const all = [];
 A.sumber.forEach(s => s.d.forEach(d => all.push({s, d, isNew: !!(s.baru || d.baru)})));
@@ -286,23 +304,40 @@ const st = {q:"", tema:"", v:"", fatal:false, klip:false, susun:"baru", tahun:""
 const tahunOf = s => (s.tarikh.match(/20\d\d/) || ["?"])[0];
 const TAHUN = [...new Set(A.sumber.map(tahunOf))].filter(y => y !== "?").sort().reverse();
 const app = document.getElementById("app");
-document.getElementById("upd").textContent = A.dikemas_kini;
+function chrome(){
+  document.documentElement.lang = LANG;
+  const N = {home: L("Dakwaan","Claims"), fatal: L("50 Paling Fatal","50 Most Fatal"), tiktok: "TikTok",
+    penerbitan: L("Penerbitan","Publications"), kronologi: L("Kronologi","Timeline"), tentang: L("Tentang","About")};
+  document.querySelectorAll(".nav nav a").forEach(a => a.textContent = N[a.dataset.r]);
+  document.querySelector(".nav nav").setAttribute("aria-label", L("Utama","Main"));
+  document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === LANG)));
+  document.getElementById("foot").innerHTML = L(
+    `Arkib ini mengumpul kenyataan awam Solehah Yaacob dan semakan fakta terhadapnya, dengan link kepada sumber asal. Klip dimainkan daripada YouTube, Facebook dan TikTok; hak cipta video kekal milik pemilik saluran. <a href="#tentang">Kaedah &amp; hak menjawab</a>. Dikemas kini ${esc(A.dikemas_kini)}.`,
+    `This archive collects Solehah Yaacob's public statements and fact-checks of them, with links to the original sources. Clips play from YouTube, Facebook and TikTok; video copyright remains with the channel owners. The archive's primary language is Malay; English translations are provided by the archive. <a href="#tentang">Method &amp; right of reply</a>. Updated ${esc(tgl(A.dikemas_kini))}.`);
+}
+document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => {
+  if (b.dataset.lang === LANG) return;
+  LANG = b.dataset.lang;
+  try { localStorage.setItem("arkib-lang", LANG); } catch {}
+  if (qLang) history.replaceState(null, "", location.pathname + location.hash);
+  chrome(); route();
+}));
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const hl = s => { const t = esc(s); if (!st.q) return t; const q = esc(st.q).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); return t.replace(new RegExp("(" + q + ")", "gi"), "<mark>$1</mark>"); };
 const fmt = sec => { sec = Math.max(0, sec|0); const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), s = sec%60; return (h ? h + ":" + String(m).padStart(2,"0") : m) + ":" + String(s).padStart(2,"0"); };
-const pill = v => v ? `<span class="v ${VC[v]}">${esc(v)}</span>` : `<span class="v v-none">Belum disemak</span>`;
+const pill = v => v ? `<span class="v ${VC[v]}">${esc(vL(v))}</span>` : `<span class="v v-none">${L("Belum disemak","Not yet checked")}</span>`;
 const hasClip = c => !!(c.s.yt || c.s.fb || c.s.tt);
-const siteUrl = () => (C.siteUrl || location.href.split("#")[0]);
+const siteUrl = () => (C.siteUrl || location.href.split("#")[0].split("?")[0]);
 // Link kongsi: halaman d/<ID>/ ada pratonton kad untuk Threads/WhatsApp (versi claude.ai guna #hash)
-const claimUrl = id => ART ? siteUrl() + "#d-" + id : siteUrl() + "d/" + id + "/";
+const claimUrl = id => ART ? siteUrl() + L("", "?lang=en") + "#d-" + id : siteUrl() + "d/" + id + "/" + L("", "?lang=en");
 
 function rowHTML(c){
-  const sub = [`<span>${esc(c.s.tarikh)}</span>`];
-  if (hasClip(c)) sub.push(`<span class="clipmark">▶ klip${c.d.ts != null ? " " + fmt(c.d.ts) : ""}</span>`);
+  const sub = [`<span>${esc(sF(c.s, "tarikh"))}</span>`];
+  if (hasClip(c)) sub.push(`<span class="clipmark">▶ ${L("klip","clip")}${c.d.ts != null ? " " + fmt(c.d.ts) : ""}</span>`);
   if (c.d.fatal) sub.push(`<span class="fatalno">FATAL #${c.d.fatal}</span>`);
-  if (c.isNew) sub.push(`<span class="new">BARU</span>`);
-  return `<li><a class="row" href="#d-${c.d.id}"><span class="id">${c.d.id}</span><span class="t"><p>${hl(c.d.t)}</p><span class="sub">${sub.join("")}</span></span><span class="r">${pill(c.d.v)}</span></a></li>`;
+  if (c.isNew) sub.push(`<span class="new">${L("BARU","NEW")}</span>`);
+  return `<li><a class="row" href="#d-${c.d.id}"><span class="id">${c.d.id}</span><span class="t"><p>${hl(tD(c.d))}</p><span class="sub">${sub.join("")}</span></span><span class="r">${pill(c.d.v)}</span></a></li>`;
 }
 function match(c){
   if (st.fatal && !c.d.fatal) return false;
@@ -310,73 +345,82 @@ function match(c){
   if (st.tahun && tahunOf(c.s) !== st.tahun) return false;
   if (st.tema && !c.d.g.split(",").includes(st.tema)) return false;
   if (st.v){ if (st.v === "-" ? !!c.d.v : c.d.v !== st.v) return false; }
-  if (st.q){ const h = (c.d.t + " " + (c.d.n || "") + " " + c.s.tajuk + " " + c.d.id).toLowerCase(); if (!h.includes(st.q.toLowerCase())) return false; }
+  if (st.q){ const e = c.d.en || {}, se = c.s.en || {};
+    const h = [c.d.t, c.d.n, c.s.tajuk, c.d.id, e.t, e.n, se.tajuk].filter(Boolean).join(" ").toLowerCase();
+    if (!h.includes(st.q.toLowerCase())) return false; }
   return true;
 }
 
 // Gelembung dialog: ayat SEBENAR beliau (verbatim), setiap satu dipautkan ke klip & bukti
 const PETIKAN = [
-  {q: "Orang Rom belajar daripada orang Melayu macam mana cara hendak membuat kapal.", id: "S01-23", bila: "ceramah, 31 Dis 2022"},
-  {q: "Jadi sebenarnya dalam Melayu terbang itu semua, itu ada dalam kitab.", id: "S11-23", bila: "podcast Harakah, 2026"},
-  {q: "Hang Tuah itu wujud dan pernah sampai ke Vatican City!", id: "S13-03", bila: "tajuk video saluran beliau, 8 Okt 2026"},
-  {q: "Saya kata eh memang besi daripada langit.", id: "S11-22", bila: "podcast Harakah, 2026"},
-  {q: "Ptolemy sebut pasal Hang Tuah.", id: "S11-52", bila: "podcast Harakah, 2026"},
-  {q: "25,000 tahun Gunung Padang ada piramid.", id: "S11-18", bila: "podcast Harakah, 2026"},
+  {q: "Orang Rom belajar daripada orang Melayu macam mana cara hendak membuat kapal.", en: "The Romans learned from the Malays how to build ships.", id: "S01-23", bila: "ceramah, 31 Dis 2022", bilaEn: "lecture, 31 Dec 2022"},
+  {q: "Jadi sebenarnya dalam Melayu terbang itu semua, itu ada dalam kitab.", en: "So actually, all that about the flying Malays, it's in the books.", id: "S11-23", bila: "podcast Harakah, 2026", bilaEn: "Harakah podcast, 2026"},
+  {q: "Hang Tuah itu wujud dan pernah sampai ke Vatican City!", en: "Hang Tuah existed and once reached Vatican City!", id: "S13-03", bila: "tajuk video saluran beliau, 8 Okt 2026", bilaEn: "video title on her channel, 8 Oct 2026"},
+  {q: "Saya kata eh memang besi daripada langit.", en: "I said, yes, the iron really came from the sky.", id: "S11-22", bila: "podcast Harakah, 2026", bilaEn: "Harakah podcast, 2026"},
+  {q: "Ptolemy sebut pasal Hang Tuah.", en: "Ptolemy mentions Hang Tuah.", id: "S11-52", bila: "podcast Harakah, 2026", bilaEn: "Harakah podcast, 2026"},
+  {q: "25,000 tahun Gunung Padang ada piramid.", en: "Gunung Padang has had a pyramid for 25,000 years.", id: "S11-18", bila: "podcast Harakah, 2026", bilaEn: "Harakah podcast, 2026"},
 ];
 let bubbleTimer = null;
+const pq = p => EN() ? p.en : p.q;
+const pcap = p => EN() ? `— Solehah Yaacob, ${esc(p.bilaEn)} · translated from Malay · <u>watch &amp; check</u>` : `— Solehah Yaacob, ${esc(p.bila)} · <u>tonton &amp; semak</u>`;
 function speakerHTML(){
-  return `<figure class="speaker"><img src="solehah.jpg" width="480" height="540" alt="Solehah Yaacob semasa berceramah (tangkap layar video saluran rasmi beliau)">
-    <figcaption>Solehah Yaacob · video saluran beliau, 8 Okt 2026</figcaption></figure>
-  <a class="bubble" id="bubble" href="#d-${PETIKAN[0].id}"><span class="bq" id="bq">${esc(PETIKAN[0].q)}</span><span class="bc" id="bc">— Solehah Yaacob, ${esc(PETIKAN[0].bila)} · <u>tonton &amp; semak</u></span></a>`;
+  return `<figure class="speaker"><img src="solehah.jpg" width="480" height="540" alt="${L("Solehah Yaacob semasa berceramah (tangkap layar video saluran rasmi beliau)","Solehah Yaacob speaking (screenshot from her official channel's video)")}">
+    <figcaption>${L("Solehah Yaacob · video saluran beliau, 8 Okt 2026","Solehah Yaacob · video on her channel, 8 Oct 2026")}</figcaption></figure>
+  <a class="bubble" id="bubble" href="#d-${PETIKAN[0].id}"><span class="bq" id="bq">${esc(pq(PETIKAN[0]))}</span><span class="bc" id="bc">${pcap(PETIKAN[0])}</span></a>`;
 }
 function startBubbles(){
   clearInterval(bubbleTimer);
   const b = document.getElementById("bubble"); if (!b) return;
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let i = 0, ch = PETIKAN[0].q.length, wait = 0, paused = false;
+  let i = 0, ch = pq(PETIKAN[0]).length, wait = 0, paused = false;
   b.addEventListener("mouseenter", () => paused = true); b.addEventListener("mouseleave", () => paused = false);
   b.addEventListener("focus", () => paused = true); b.addEventListener("blur", () => paused = false);
-  const show = k => { const p = PETIKAN[k]; b.href = "#d-" + p.id; document.getElementById("bc").innerHTML = `— Solehah Yaacob, ${esc(p.bila)} · <u>tonton &amp; semak</u>`; };
+  const show = k => { const p = PETIKAN[k]; b.href = "#d-" + p.id; document.getElementById("bc").innerHTML = pcap(p); };
   bubbleTimer = setInterval(() => {
     if (!document.body.contains(b)) { clearInterval(bubbleTimer); return; }
     if (paused) return;
-    const p = PETIKAN[i];
-    if (still) { if (++wait > 70) { wait = 0; i = (i + 1) % PETIKAN.length; show(i); document.getElementById("bq").textContent = PETIKAN[i].q; } return; }
-    if (ch < p.q.length) { ch += 1; document.getElementById("bq").textContent = p.q.slice(0, ch); }
+    const q = pq(PETIKAN[i]);
+    if (still) { if (++wait > 70) { wait = 0; i = (i + 1) % PETIKAN.length; show(i); document.getElementById("bq").textContent = pq(PETIKAN[i]); } return; }
+    if (ch < q.length) { ch += 1; document.getElementById("bq").textContent = q.slice(0, ch); }
     else if (++wait > 60) { wait = 0; ch = 0; i = (i + 1) % PETIKAN.length; show(i); b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); }
   }, 45);
 }
 function heroHTML(){
   const n = all.length, sal = all.filter(c => c.d.v === "Salah").length, klip = all.filter(hasClip).length;
-  return `<section class="hero"><div class="hero-map">${document.getElementById("map-tpl").innerHTML}${speakerHTML()}</div>
+  let map = document.getElementById("map-tpl").innerHTML;
+  if (EN()) map = map.replace("Peta lama gaya Ptolemy: Aurea Chersonesus (Semenanjung Emas)", "Ptolemy-style old map: Aurea Chersonesus (the Golden Chersonese)")
+    .replace("TABVLA DAKWAAN", "TABVLA CLAIMS").replace("mengikut gaya Ptolemy", "after the manner of Ptolemy");
+  return `<section class="hero"><div class="hero-map">${map}${speakerHTML()}</div>
   <div class="hero-txt"><div class="wrap">
-    <div class="eyebrow">Arkib terbuka · 2018–2026</div>
-    <h1>Arkib Dakwaan Solehah</h1>
-    <p class="lede">Setiap dakwaan sejarah Solehah Yaacob, diikat pada klip atau hantaran asalnya, dengan status semakan fakta. Baca, tonton sendiri, komen, dan hantar pembahasan.</p>
-    <div class="stats"><div><b>${n}</b>dakwaan</div><div><b>${A.sumber.length}</b>sumber</div><div><b>${klip}</b>ada klip</div><div><b>${sal}</b>ditanda salah</div></div>
+    <div class="eyebrow">${L("Arkib terbuka","Open archive")} · 2018–2026</div>
+    <h1>${L("Arkib Dakwaan Solehah","The Solehah Claims Archive")}</h1>
+    <p class="lede">${L("Setiap dakwaan sejarah Solehah Yaacob, diikat pada klip atau hantaran asalnya, dengan status semakan fakta. Baca, tonton sendiri, komen, dan hantar pembahasan.",
+      "Every historical claim made by Solehah Yaacob, tied to its original clip or post, with a fact-check status. Read, watch for yourself, comment, and submit a rebuttal. Claims are translated from Malay; the original wording is shown on each claim page.")}</p>
+    <div class="stats"><div><b>${n}</b>${L("dakwaan","claims")}</div><div><b>${A.sumber.length}</b>${L("sumber","sources")}</div><div><b>${klip}</b>${L("ada klip","with clips")}</div><div><b>${sal}</b>${L("ditanda salah","marked false")}</div></div>
   </div></div></section>`;
 }
 function toolsHTML(){
   const opt = (v, l, cur) => `<option value="${v}"${cur===v?" selected":""}>${esc(l)}</option>`;
-  const susun = (st.fatal ? [["nombor","Ikut nombor 1–50"]] : []).concat([["baru","Terbaru dahulu"],["lama","Terlama dahulu"]]);
+  const susun = (st.fatal ? [["nombor", L("Ikut nombor 1–50","By number 1–50")]] : []).concat([["baru", L("Terbaru dahulu","Newest first")],["lama", L("Terlama dahulu","Oldest first")]]);
+  const all_ = L("Semua","All");
   return `<div class="tools">
-    <input type="search" id="q" placeholder="Cari: Keturah, Kalah, Hang Tuah, meteor…" aria-label="Cari dakwaan" value="${esc(st.q)}">
+    <input type="search" id="q" placeholder="${L("Cari: Keturah, Kalah, Hang Tuah, meteor…","Search: Keturah, Kalah, Hang Tuah, meteor…")}" aria-label="${L("Cari dakwaan","Search claims")}" value="${esc(st.q)}">
   </div>
   <div class="tools filters">
-    <label class="fl">Susun<select id="susun">${susun.map(([v,l]) => opt(v, l, st.susun)).join("")}</select></label>
-    <label class="fl">Tahun<select id="tahun">${opt("", "Semua", st.tahun)}${TAHUN.map(y => opt(y, y, st.tahun)).join("")}${opt("?", "Tarikh tak pasti", st.tahun)}</select></label>
-    <label class="fl">Tema<select id="tema">${opt("", "Semua", st.tema)}${Object.entries(T).map(([k,v]) => opt(k, v, st.tema)).join("")}</select></label>
-    <label class="fl">Status<select id="vv">${opt("", "Semua", st.v)}${["Salah","Tak disokong","Belum dapat disahkan","Sebahagian betul","Betul"].map(v => opt(v, v, st.v)).join("")}${opt("-", "Belum disemak", st.v)}</select></label>
-    <label class="tog"><input type="checkbox" id="kl"${st.klip?" checked":""}> Ada klip</label>
-    <button class="reset" id="reset" type="button"${(st.q||st.tahun||st.tema||st.v||st.klip) ? "" : " hidden"}>Set semula</button>
+    <label class="fl">${L("Susun","Sort")}<select id="susun">${susun.map(([v,l]) => opt(v, l, st.susun)).join("")}</select></label>
+    <label class="fl">${L("Tahun","Year")}<select id="tahun">${opt("", all_, st.tahun)}${TAHUN.map(y => opt(y, y, st.tahun)).join("")}${opt("?", L("Tarikh tak pasti","Date uncertain"), st.tahun)}</select></label>
+    <label class="fl">${L("Tema","Theme")}<select id="tema">${opt("", all_, st.tema)}${Object.entries(tema()).map(([k,v]) => opt(k, v, st.tema)).join("")}</select></label>
+    <label class="fl">Status<select id="vv">${opt("", all_, st.v)}${["Salah","Tak disokong","Belum dapat disahkan","Sebahagian betul","Betul"].map(v => opt(v, vL(v), st.v)).join("")}${opt("-", L("Belum disemak","Not yet checked"), st.v)}</select></label>
+    <label class="tog"><input type="checkbox" id="kl"${st.klip?" checked":""}> ${L("Ada klip","Has clip")}</label>
+    <button class="reset" id="reset" type="button"${(st.q||st.tahun||st.tema||st.v||st.klip) ? "" : " hidden"}>${L("Set semula","Reset")}</button>
   </div>`;
 }
 function listHTML(){
   const hits = all.filter(match);
   let h = st.fatal
-    ? `<p class="count">${hits.length} dakwaan (no. 13 merangkumi dua dakwaan)</p>`
-    : `<p class="count">${hits.length} daripada ${all.length} dakwaan</p>`;
-  if (!hits.length) return h + `<p class="empty">Tiada dakwaan sepadan. Cuba kata carian lain atau buang penapis.</p>`;
+    ? `<p class="count">${hits.length} ${L("dakwaan (no. 13 merangkumi dua dakwaan)","claims (no. 13 covers two claims)")}</p>`
+    : `<p class="count">${L(`${hits.length} daripada ${all.length} dakwaan`, `${hits.length} of ${all.length} claims`)}</p>`;
+  if (!hits.length) return h + `<p class="empty">${L("Tiada dakwaan sepadan. Cuba kata carian lain atau buang penapis.","No matching claims. Try another search term or remove filters.")}</p>`;
   // Sumber bertarikh disusun ikut tarikh; yang tarikhnya tak pasti sentiasa di hujung
   const dated = A.sumber.filter(s => tahunOf(s) !== "?"), undated = A.sumber.filter(s => tahunOf(s) === "?");
   const order = (st.susun === "lama" ? dated : [...dated].reverse()).concat(undated);
@@ -387,7 +431,7 @@ function listHTML(){
   }
   order.forEach(s => {
     const cs = hits.filter(c => c.s === s); if (!cs.length) return;
-    h += `<div class="src-h"><h2>${esc(s.tajuk)}</h2><span class="meta">${esc(s.id)} · ${esc(s.tarikh)}${s.yt ? " · ▶ YouTube" : s.fb ? " · ▶ Facebook" : s.tt ? " · ▶ TikTok" : ""}</span></div><ul class="rows">${cs.map(rowHTML).join("")}</ul>`;
+    h += `<div class="src-h"><h2>${esc(sF(s, "tajuk"))}</h2><span class="meta">${esc(s.id)} · ${esc(sF(s, "tarikh"))}${s.yt ? " · ▶ YouTube" : s.fb ? " · ▶ Facebook" : s.tt ? " · ▶ TikTok" : ""}</span></div><ul class="rows">${cs.map(rowHTML).join("")}</ul>`;
   });
   return h;
 }
@@ -412,7 +456,7 @@ function viewHome(fatal){
   if (!!fatal !== st.fatal) st.susun = fatal ? "nombor" : "baru";
   st.fatal = !!fatal;
   const head = fatal
-    ? `<div class="wrap prose" style="padding-bottom:0"><div class="eyebrow" style="margin-top:28px">Senarai pendek</div><h1 style="font-size:clamp(32px,5vw,52px)">50 Dakwaan Paling Fatal</h1><p class="lede">Dakwaan yang paling mudah dipatahkan dengan tarikh, sumber asal atau sains asas. Klik mana-mana untuk tonton klip dan baca semakan.</p></div>`
+    ? `<div class="wrap prose" style="padding-bottom:0"><div class="eyebrow" style="margin-top:28px">${L("Senarai pendek","Shortlist")}</div><h1 style="font-size:clamp(32px,5vw,52px)">${L("50 Dakwaan Paling Fatal","The 50 Most Fatal Claims")}</h1><p class="lede">${L("Dakwaan yang paling mudah dipatahkan dengan tarikh, sumber asal atau sains asas. Klik mana-mana untuk tonton klip dan baca semakan.","The claims most easily refuted by dates, original sources or basic science. Click any of them to watch the clip and read the fact-check.")}</p></div>`
     : heroHTML();
   app.innerHTML = head + `<div class="wrap">${toolsHTML()}<div id="list">${listHTML()}</div></div>`;
   bindTools();
@@ -423,48 +467,51 @@ function viewHome(fatal){
 const isFb = u => /facebook\.com\/(photo|reel|watch|[^/]+\/posts)/.test(u);
 function sangHTML(d){
   if (!d.sang) return "";
-  return `<section class="sec panel"><h3>Sanggahan The Patriots</h3><ul class="sang">${d.sang.map((x, i) => `<li>
+  return `<section class="sec panel"><h3>${L("Sanggahan The Patriots","Rebuttals by The Patriots")}</h3><ul class="sang">${d.sang.map((x, i) => `<li>
     <a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.tajuk)} ↗</a>
-    <span class="m">${esc(x.jenis === "bacaan" ? "Bacaan berkaitan" : "Sanggahan")} · ${esc(x.platform)}${x.penulis ? " · " + esc(x.penulis) : ""}${x.tarikh ? " · " + esc(x.tarikh) : ""}</span>
-    ${isFb(x.url) && !ART ? `<button class="btn alt fbbtn" type="button" data-fb="${esc(x.url)}">Papar di sini</button><div class="fbslot" hidden></div>` : ""}
-  </li>`).join("")}</ul><p class="vnote">Hantaran Facebook dimuatkan daripada Facebook hanya selepas anda klik “Papar di sini”.</p></section>`;
+    <span class="m">${x.jenis === "bacaan" ? L("Bacaan berkaitan","Related reading") : L("Sanggahan","Rebuttal")}${L("", " (in Malay)")} · ${esc(x.platform)}${x.penulis ? " · " + esc(x.penulis) : ""}${x.tarikh ? " · " + esc(tgl(x.tarikh)) : ""}</span>
+    ${isFb(x.url) && !ART ? `<button class="btn alt fbbtn" type="button" data-fb="${esc(x.url)}">${L("Papar di sini","Show here")}</button><div class="fbslot" hidden></div>` : ""}
+  </li>`).join("")}</ul><p class="vnote">${L("Hantaran Facebook dimuatkan daripada Facebook hanya selepas anda klik “Papar di sini”.","Facebook posts load from Facebook only after you click “Show here”.")}</p></section>`;
 }
 function bindSang(){
   document.querySelectorAll(".fbbtn").forEach(b => b.addEventListener("click", () => {
     const slot = b.nextElementSibling;
-    if (!slot.hidden){ slot.hidden = true; slot.innerHTML = ""; b.textContent = "Papar di sini"; return; }
+    if (!slot.hidden){ slot.hidden = true; slot.innerHTML = ""; b.textContent = L("Papar di sini","Show here"); return; }
     const w = Math.max(350, Math.min(500, slot.parentElement.clientWidth - 4));
-    slot.innerHTML = `<iframe title="Hantaran Facebook" src="https://www.facebook.com/plugins/post.php?href=${encodeURIComponent(b.dataset.fb)}&show_text=true&width=${w}" width="${w}" height="760" style="border:0;overflow:hidden;max-width:100%;background:#fff;border-radius:8px" scrolling="no" frameborder="0" allowfullscreen allow="encrypted-media; picture-in-picture; web-share"></iframe>`;
-    slot.hidden = false; b.textContent = "Tutup hantaran";
+    slot.innerHTML = `<iframe title="${L("Hantaran Facebook","Facebook post")}" src="https://www.facebook.com/plugins/post.php?href=${encodeURIComponent(b.dataset.fb)}&show_text=true&width=${w}" width="${w}" height="760" style="border:0;overflow:hidden;max-width:100%;background:#fff;border-radius:8px" scrolling="no" frameborder="0" allowfullscreen allow="encrypted-media; picture-in-picture; web-share"></iframe>`;
+    slot.hidden = false; b.textContent = L("Tutup hantaran","Close post");
   }));
 }
 function videoHTML(c){
   const s = c.s;
   if (!s.yt && s.tt){
     const url = `https://www.tiktok.com/@solehah_yaacob/video/${esc(s.tt)}`;
-    if (ART) return `<div class="panel"><h3>Klip</h3><div class="btns"><a class="btn" href="${url}" target="_blank" rel="noopener">▶ Tonton di TikTok ↗</a></div></div>`;
-    return `<div class="panel"><div class="ttvideo" style="margin:0 auto"><iframe title="Klip TikTok: ${esc(s.tajuk)}" src="https://www.tiktok.com/player/v1/${esc(s.tt)}?description=1&rel=0" loading="lazy" allow="fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
-      <p class="vnote">Klip dimainkan daripada TikTok. <a href="#tiktok">Cari dalam semua video TikTok beliau</a> · <a href="${url}" target="_blank" rel="noopener">Buka di TikTok ↗</a></p></div>`;
+    if (ART) return `<div class="panel"><h3>${L("Klip","Clip")}</h3><div class="btns"><a class="btn" href="${url}" target="_blank" rel="noopener">▶ ${L("Tonton di TikTok","Watch on TikTok")} ↗</a></div></div>`;
+    return `<div class="panel"><div class="ttvideo" style="margin:0 auto"><iframe title="${L("Klip TikTok","TikTok clip")}: ${esc(sF(s, "tajuk"))}" src="https://www.tiktok.com/player/v1/${esc(s.tt)}?description=1&rel=0" loading="lazy" allow="fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+      <p class="vnote">${L("Klip dimainkan daripada TikTok.","Clip plays from TikTok (in Malay).")} <a href="#tiktok">${L("Cari dalam semua video TikTok beliau","Search all her TikTok videos")}</a> · <a href="${url}" target="_blank" rel="noopener">${L("Buka di TikTok","Open on TikTok")} ↗</a></p></div>`;
   }
   if (!s.yt && s.fb && !ART){
     const href = encodeURIComponent("https://www.facebook.com/watch/?v=" + s.fb);
-    return `<div class="panel"><div class="fbvideo"><iframe title="Klip Facebook: ${esc(s.tajuk)}" src="https://www.facebook.com/plugins/video.php?href=${href}&show_text=false&width=360" loading="lazy" scrolling="no" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture; web-share"></iframe></div>
-      <p class="vnote">Klip dimainkan daripada Facebook. Cap masa tepat tak boleh ditetapkan untuk video Facebook. <a href="https://www.facebook.com/watch/?v=${esc(s.fb)}" target="_blank" rel="noopener">Buka di Facebook ↗</a></p></div>`;
+    return `<div class="panel"><div class="fbvideo"><iframe title="${L("Klip Facebook","Facebook clip")}: ${esc(sF(s, "tajuk"))}" src="https://www.facebook.com/plugins/video.php?href=${href}&show_text=false&width=360" loading="lazy" scrolling="no" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture; web-share"></iframe></div>
+      <p class="vnote">${L("Klip dimainkan daripada Facebook. Cap masa tepat tak boleh ditetapkan untuk video Facebook.","Clip plays from Facebook (in Malay). Exact timestamps cannot be set for Facebook videos.")} <a href="https://www.facebook.com/watch/?v=${esc(s.fb)}" target="_blank" rel="noopener">${L("Buka di Facebook","Open on Facebook")} ↗</a></p></div>`;
   }
   if (!s.yt){
     const first = s.links[0];
-    return `<div class="panel"><h3>Klip</h3><p class="empty">Klip ini bukan di YouTube, jadi tak boleh dimainkan di sini.</p>${first ? `<div class="btns"><a class="btn" href="${esc(first.u)}" target="_blank" rel="noopener">Buka ${esc(first.l)} ↗</a></div>` : ""}</div>`;
+    return `<div class="panel"><h3>${L("Klip","Clip")}</h3><p class="empty">${L("Klip ini bukan di YouTube, jadi tak boleh dimainkan di sini.","This clip is not on YouTube, so it cannot be played here.")}</p>${first ? `<div class="btns"><a class="btn" href="${esc(first.u)}" target="_blank" rel="noopener">${L("Buka","Open")} ${esc(first.l)} ↗</a></div>` : ""}</div>`;
   }
   const start = c.d.ts != null ? c.d.ts : (s.ytStart || 0);
   const note = c.d.ts != null
-    ? (c.d.tsSah ? `Bermula pada ${fmt(start)}.` : `Bermula sekitar ${fmt(start)} (cap masa anggaran, dipadankan daripada transkrip automatik).`)
-    : `Cap masa tepat belum ditanda — klip bermula ${start ? "pada " + fmt(start) : "dari awal"}. Tahu minit tepatnya? Hantar dalam pembahasan.`;
+    ? (c.d.tsSah ? L(`Bermula pada ${fmt(start)}.`, `Starts at ${fmt(start)}.`)
+                 : L(`Bermula sekitar ${fmt(start)} (cap masa anggaran, dipadankan daripada transkrip automatik).`, `Starts around ${fmt(start)} (approximate timestamp, matched from an automatic transcript).`))
+    : L(`Cap masa tepat belum ditanda — klip bermula ${start ? "pada " + fmt(start) : "dari awal"}. Tahu minit tepatnya? Hantar dalam pembahasan.`,
+        `Exact timestamp not yet marked — the clip starts ${start ? "at " + fmt(start) : "from the beginning"}. Know the exact minute? Send it in a rebuttal.`);
+  const inMs = L("", " The video is in Malay.");
   if (ART) {
-    const label = c.d.ts != null ? `Tonton klip dari minit ${fmt(start)}` : (start ? `Tonton video dari ${fmt(start)}` : "Tonton video penuh");
-    return `<div class="panel"><h3>Klip</h3><div class="btns"><a class="btn" href="https://www.youtube.com/watch?v=${esc(s.yt)}&t=${start}s" target="_blank" rel="noopener">▶ ${label} ↗</a></div><p class="vnote">${note}</p></div>`;
+    const label = c.d.ts != null ? L(`Tonton klip dari minit ${fmt(start)}`, `Watch the clip from ${fmt(start)}`) : (start ? L(`Tonton video dari ${fmt(start)}`, `Watch the video from ${fmt(start)}`) : L("Tonton video penuh","Watch the full video"));
+    return `<div class="panel"><h3>${L("Klip","Clip")}</h3><div class="btns"><a class="btn" href="https://www.youtube.com/watch?v=${esc(s.yt)}&t=${start}s" target="_blank" rel="noopener">▶ ${label} ↗</a></div><p class="vnote">${note}${inMs}</p></div>`;
   }
-  return `<div class="panel"><div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${esc(s.yt)}?start=${start}&rel=0" title="Klip: ${esc(s.tajuk)}" loading="lazy" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
-  <p class="vnote">${note} <a href="https://www.youtube.com/watch?v=${esc(s.yt)}&t=${start}s" target="_blank" rel="noopener">Buka di YouTube ↗</a></p></div>`;
+  return `<div class="panel"><div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${esc(s.yt)}?start=${start}&rel=0" title="${L("Klip","Clip")}: ${esc(sF(s, "tajuk"))}" loading="lazy" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+  <p class="vnote">${note}${inMs} <a href="https://www.youtube.com/watch?v=${esc(s.yt)}&t=${start}s" target="_blank" rel="noopener">${L("Buka di YouTube","Open on YouTube")} ↗</a></p></div>`;
 }
 function pembahasanURL(id){
   if (C.borangPembahasan) return C.borangPembahasan.replace("{ID}", encodeURIComponent(id));
@@ -474,44 +521,46 @@ function pembahasanURL(id){
 function relPubs(id){
   const ps = (window.PENERBITAN || []).filter(p => p.berkait.includes(id));
   if (!ps.length) return "";
-  return `<div class="panel sec"><h3>Tulisan beliau berkaitan</h3><ul class="sib">${ps.map(p =>
+  return `<div class="panel sec"><h3>${L("Tulisan beliau berkaitan","Her related writings")}</h3><ul class="sib">${ps.map(p =>
     `<li><a href="${p.pdf ? "#p-" + p.id : esc(p.rasmi || p.halaman)}"${p.pdf ? "" : ' target="_blank" rel="noopener"'}>${esc(p.tahun)} · ${esc(p.tajuk)}${p.pdf ? " · PDF" : " ↗"}</a></li>`).join("")}</ul></div>`;
 }
 function viewDetail(id){
   const c = byId[id];
-  if (!c){ app.innerHTML = `<div class="wrap prose"><h2>Dakwaan tak dijumpai</h2><p>ID “${esc(id)}” tiada dalam arkib. <a href="#">Kembali ke senarai</a>.</p></div>`; return; }
-  const s = c.s, d = c.d;
+  if (!c){ app.innerHTML = `<div class="wrap prose"><h2>${L("Dakwaan tak dijumpai","Claim not found")}</h2><p>${L(`ID “${esc(id)}” tiada dalam arkib.`, `ID “${esc(id)}” is not in the archive.`)} <a href="#">${L("Kembali ke senarai","Back to the list")}</a>.</p></div>`; return; }
+  const s = c.s, d = c.d, T = tema();
   const tags = d.g.split(",").map(g => esc(T[g])).join(", ");
-  const sibs = s.d.map(x => `<li><a href="#d-${x.id}"${x.id===id?' aria-current="true"':""}>${x.id.split("-")[1]}. ${esc(x.t.length > 90 ? x.t.slice(0,88) + "…" : x.t)}</a></li>`).join("");
-  const pemb = (d.pemb || []).map(p => `<div class="pemb"><div>${esc(p.teks)}</div><div class="by">${esc(p.oleh || "Penyumbang")}${p.tarikh ? " · " + esc(p.tarikh) : ""}${p.sumber ? ` · <a href="${esc(p.sumber)}" target="_blank" rel="noopener">sumber ↗</a>` : ""}</div></div>`).join("");
+  const sibs = s.d.map(x => { const t = tD(x); return `<li><a href="#d-${x.id}"${x.id===id?' aria-current="true"':""}>${x.id.split("-")[1]}. ${esc(t.length > 90 ? t.slice(0,88) + "…" : t)}</a></li>`; }).join("");
+  const pemb = (d.pemb || []).map(p => `<div class="pemb"><div>${esc(p.teks)}</div><div class="by">${esc(p.oleh || L("Penyumbang","Contributor"))}${p.tarikh ? " · " + esc(tgl(p.tarikh)) : ""}${p.sumber ? ` · <a href="${esc(p.sumber)}" target="_blank" rel="noopener">${L("sumber","source")} ↗</a>` : ""}</div></div>`).join("");
   const purl = pembahasanURL(id);
-  const threads = "https://www.threads.net/intent/post?text=" + encodeURIComponent(`Dakwaan ${id}: “${d.t.length > 200 ? d.t.slice(0,198) + "…" : d.t}”${d.v ? " — " + d.v : ""}\n${claimUrl(id)}`);
+  const tx = tD(d), note = nD(d);
+  const threads = "https://www.threads.net/intent/post?text=" + encodeURIComponent(`${L("Dakwaan","Claim")} ${id}: “${tx.length > 200 ? tx.slice(0,198) + "…" : tx}”${d.v ? " — " + vL(d.v) : ""}\n${claimUrl(id)}`);
   app.innerHTML = `<div class="wrap">
-    <div class="crumb"><a href="#">Semua dakwaan</a> / ${esc(s.id)} · ${esc(s.tarikh)} / <b>${esc(id)}</b>${d.fatal ? ` · <span class="fatalno">FATAL #${d.fatal}</span>` : ""}</div>
-    <blockquote class="claim-q">${esc(d.t)}</blockquote>
-    <div class="verdict-box">${pill(d.v)}<p>${d.n ? esc(d.n) : (d.v ? "" : "Dakwaan ini belum disemak. Ada sumber yang membuktikan atau mematahkannya? Hantar pembahasan.")}</p></div>
-    ${d.ruj ? `<div class="ruj"><span class="ruj-h">Bukti &amp; rujukan</span>${d.ruj.map(r => `<a href="${esc(r.u)}" target="_blank" rel="noopener">${esc(r.l)} ↗</a>`).join("")}</div>` : ""}
+    <div class="crumb"><a href="#">${L("Semua dakwaan","All claims")}</a> / ${esc(s.id)} · ${esc(sF(s, "tarikh"))} / <b>${esc(id)}</b>${d.fatal ? ` · <span class="fatalno">FATAL #${d.fatal}</span>` : ""}</div>
+    <blockquote class="claim-q">${esc(tx)}</blockquote>
+    ${EN() && d.en ? `<p class="orig" lang="ms"><b>Original (Malay)</b>${esc(d.t)}</p>` : ""}
+    <div class="verdict-box">${pill(d.v)}<p>${note ? esc(note) : (d.v ? "" : L("Dakwaan ini belum disemak. Ada sumber yang membuktikan atau mematahkannya? Hantar pembahasan.","This claim has not been checked yet. Have a source that proves or refutes it? Send a rebuttal."))}</p></div>
+    ${d.ruj ? `<div class="ruj"><span class="ruj-h">${L("Bukti &amp; rujukan","Evidence &amp; references")}</span>${d.ruj.map(r => `<a href="${esc(r.u)}" target="_blank" rel="noopener">${esc(EN() && r.le ? r.le : r.l)} ↗</a>`).join("")}</div>` : ""}
     <div class="grid2">
       <div>${videoHTML(c)}
         ${sangHTML(d)}
-        <section class="sec panel"><h3>Pembahasan</h3>${pemb || `<p class="empty">Belum ada pembahasan yang diluluskan untuk dakwaan ini.</p>`}
-          <div class="btns">${purl ? `<a class="btn" href="${esc(purl)}" target="_blank" rel="noopener">Hantar pembahasan ↗</a>` : `<span class="empty">Borang pembahasan belum disambungkan.</span>`}</div>
-          <p class="vnote">Pembahasan disemak dahulu sebelum dipaparkan. Sertakan sumber (buku, jurnal, manuskrip, link).</p></section>
-        <section class="sec panel"><h3>Komen</h3><div id="giscus"></div></section>
+        <section class="sec panel"><h3>${L("Pembahasan","Rebuttals")}</h3>${pemb || `<p class="empty">${L("Belum ada pembahasan yang diluluskan untuk dakwaan ini.","No approved rebuttals for this claim yet.")}</p>`}
+          <div class="btns">${purl ? `<a class="btn" href="${esc(purl)}" target="_blank" rel="noopener">${L("Hantar pembahasan","Send a rebuttal")} ↗</a>` : `<span class="empty">${L("Borang pembahasan belum disambungkan.","The rebuttal form is not connected yet.")}</span>`}</div>
+          <p class="vnote">${L("Pembahasan disemak dahulu sebelum dipaparkan. Sertakan sumber (buku, jurnal, manuskrip, link).","Rebuttals are reviewed before they are shown. Include sources (books, journals, manuscripts, links). The form is in Malay; you may answer in English.")}</p></section>
+        <section class="sec panel"><h3>${L("Komen","Comments")}</h3><div id="giscus"></div></section>
       </div>
       <aside>
-        <div class="panel"><h3>Sumber asal</h3>
-          <dl class="dl"><dt>Tajuk</dt><dd>${esc(s.tajuk)}</dd><dt>Tarikh</dt><dd>${esc(s.tarikh)}</dd><dt>Platform</dt><dd>${esc(s.platform)}</dd><dt>Tema</dt><dd>${tags}</dd></dl>
-          ${s.nota ? `<p class="vnote">${esc(s.nota)}</p>` : ""}
-          <div class="links" style="margin-top:10px">${s.links.map(l => `<a href="${esc(l.u)}" target="_blank" rel="noopener">${esc(l.l)} ↗</a>`).join("") || `<span class="empty">Link asal belum dikenal pasti.</span>`}</div>
-          <div class="btns" style="margin-top:12px"><button class="btn alt" id="copy">Salin link</button><a class="btn alt" href="${threads}" target="_blank" rel="noopener">Kongsi ke Threads ↗</a>${ART ? "" : `<a class="btn alt" href="d/${esc(id)}/kad.jpg" target="_blank" rel="noopener">Kad gambar ↗</a>`}</div>
+        <div class="panel"><h3>${L("Sumber asal","Original source")}</h3>
+          <dl class="dl"><dt>${L("Tajuk","Title")}</dt><dd>${esc(sF(s, "tajuk"))}</dd><dt>${L("Tarikh","Date")}</dt><dd>${esc(sF(s, "tarikh"))}</dd><dt>Platform</dt><dd>${esc(sF(s, "platform"))}</dd><dt>${L("Tema","Theme")}</dt><dd>${tags}</dd></dl>
+          ${s.nota ? `<p class="vnote">${esc(sF(s, "nota"))}</p>` : ""}
+          <div class="links" style="margin-top:10px">${s.links.map(l => `<a href="${esc(l.u)}" target="_blank" rel="noopener">${esc(l.l)} ↗</a>`).join("") || `<span class="empty">${L("Link asal belum dikenal pasti.","Original link not yet identified.")}</span>`}</div>
+          <div class="btns" style="margin-top:12px"><button class="btn alt" id="copy">${L("Salin link","Copy link")}</button><a class="btn alt" href="${threads}" target="_blank" rel="noopener">${L("Kongsi ke Threads","Share to Threads")} ↗</a>${ART ? "" : `<a class="btn alt" href="d/${esc(id)}/kad.jpg" target="_blank" rel="noopener">${L("Kad gambar","Image card")} ↗</a>`}</div>
         </div>
         ${relPubs(id)}
-        <div class="panel sec"><h3>Dakwaan lain dalam sumber ini</h3><ul class="sib">${sibs}</ul></div>
+        <div class="panel sec"><h3>${L("Dakwaan lain dalam sumber ini","Other claims in this source")}</h3><ul class="sib">${sibs}</ul></div>
       </aside>
     </div></div>`;
   document.getElementById("copy").addEventListener("click", async e => {
-    try { await navigator.clipboard.writeText(claimUrl(id)); e.target.textContent = "Link disalin"; }
+    try { await navigator.clipboard.writeText(claimUrl(id)); e.target.textContent = L("Link disalin","Link copied"); }
     catch { e.target.textContent = claimUrl(id); }
   });
   loadGiscus(id);
@@ -519,68 +568,72 @@ function viewDetail(id){
   window.scrollTo(0, 0);
 }
 async function artifactComments(box){
-  box.innerHTML = `<p class="empty">Memuatkan ruangan komen…</p>`;
+  box.innerHTML = `<p class="empty">${L("Memuatkan ruangan komen…","Loading comments…")}</p>`;
   let cm = null;
   try { cm = window.claude && await window.claude.use("comments"); } catch {}
   if (!document.body.contains(box)) return;
-  if (!cm){ box.innerHTML = `<p class="empty">Komen dibuka untuk pembaca yang log masuk claude.ai dengan akses komen. Ada bukti? Guna butang “Hantar pembahasan” di atas.</p>`; return; }
-  box.innerHTML = `<p class="empty">Komen dipaparkan di tepi laman (ikon komen claude.ai).</p><div class="btns"><button class="btn" id="tulis">Tulis komen pada dakwaan ini</button></div>`;
+  if (!cm){ box.innerHTML = `<p class="empty">${L("Komen dibuka untuk pembaca yang log masuk claude.ai dengan akses komen. Ada bukti? Guna butang “Hantar pembahasan” di atas.","Comments are open to readers signed in to claude.ai with comment access. Have evidence? Use the “Send a rebuttal” button above.")}</p>`; return; }
+  box.innerHTML = `<p class="empty">${L("Komen dipaparkan di tepi laman (ikon komen claude.ai).","Comments appear beside the page (claude.ai comment icon).")}</p><div class="btns"><button class="btn" id="tulis">${L("Tulis komen pada dakwaan ini","Comment on this claim")}</button></div>`;
   document.getElementById("tulis").addEventListener("click", async () => {
     try { await cm.openComposer({element: document.querySelector(".claim-q")}); }
-    catch { box.querySelector(".empty").textContent = "Komen tak dapat dibuka dalam paparan ini."; }
+    catch { box.querySelector(".empty").textContent = L("Komen tak dapat dibuka dalam paparan ini.","Comments cannot be opened in this view."); }
   });
 }
 function loadGiscus(id){
   const box = document.getElementById("giscus"), g = C.giscus || {};
   if (ART) { artifactComments(box); return; }
-  if (!g.repo || !g.repoId || !g.categoryId){ box.innerHTML = `<p class="empty">Ruangan komen belum diaktifkan (perlu tetapan Giscus dalam config.js).</p>`; return; }
+  if (!g.repo || !g.repoId || !g.categoryId){ box.innerHTML = `<p class="empty">${L("Ruangan komen belum diaktifkan (perlu tetapan Giscus dalam config.js).","Comments are not enabled yet (Giscus settings needed in config.js).")}</p>`; return; }
   const s = document.createElement("script");
   s.src = "https://giscus.app/client.js"; s.async = true; s.crossOrigin = "anonymous";
   Object.entries({repo:g.repo, "repo-id":g.repoId, category:g.category || "Komen", "category-id":g.categoryId,
     mapping:"specific", term:id, strict:"1", "reactions-enabled":"1", "emit-metadata":"0", "input-position":"top",
-    theme:"preferred_color_scheme", lang:"id", loading:"lazy"}).forEach(([k,v]) => s.setAttribute("data-" + k, v));
+    theme:"preferred_color_scheme", lang:L("id","en"), loading:"lazy"}).forEach(([k,v]) => s.setAttribute("data-" + k, v));
   box.appendChild(s);
 }
 const P = window.PENERBITAN || [];
 const pById = Object.fromEntries(P.map(p => [p.id, p]));
 const pst = {q:"", jenis:"", pdf:false, rel:false, susun:"baru"};
-const accBadge = p => p.pdf ? `<span class="acc acc-ok">PDF terbuka</span>` : `<span class="acc acc-no">${p.akses === "terhad" ? "Akses terhad" : "Tiada PDF awam"}</span>`;
+const accBadge = p => p.pdf ? `<span class="acc acc-ok">${L("PDF terbuka","Open PDF")}</span>` : `<span class="acc acc-no">${p.akses === "terhad" ? L("Akses terhad","Restricted access") : L("Tiada PDF awam","No public PDF")}</span>`;
+const JENIS_EN = {"Artikel":"Article","Buku":"Book","Kertas persidangan":"Conference paper"};
+const jL = j => EN() ? (JENIS_EN[j] || j) : j;
+const catL = p => EN() && A.pub_en && A.pub_en[p.id] ? A.pub_en[p.id] : p.catatan;
 const doiUrl = d => !d ? "" : (d.startsWith("http") ? d : "https://doi.org/" + d.replace(/^doi:/i, ""));
 function pubHTML(p){
   const meta = [p.terbitan, p.isu, p.penerbit].filter(Boolean).map(esc).join(" · ");
-  const rel = p.berkait.map(id => `<a class="chip" href="#d-${id}" title="${esc(byId[id] ? byId[id].d.t : "")}">${id}</a>`).join("");
+  const rel = p.berkait.map(id => `<a class="chip" href="#d-${id}" title="${esc(byId[id] ? tD(byId[id].d) : "")}">${id}</a>`).join("");
   const acts = [
-    p.pdf ? `<a class="btn" href="#p-${p.id}">Baca PDF</a>` : "",
-    p.rasmi ? `<a href="${esc(p.rasmi)}" target="_blank" rel="noopener">Halaman penerbit ↗</a>` : "",
-    p.halaman ? `<a href="${esc(p.halaman)}" target="_blank" rel="noopener">Rekod IRep ↗</a>` : "",
+    p.pdf ? `<a class="btn" href="#p-${p.id}">${L("Baca PDF","Read PDF")}</a>` : "",
+    p.rasmi ? `<a href="${esc(p.rasmi)}" target="_blank" rel="noopener">${L("Halaman penerbit","Publisher page")} ↗</a>` : "",
+    p.halaman ? `<a href="${esc(p.halaman)}" target="_blank" rel="noopener">${L("Rekod IRep","IRep record")} ↗</a>` : "",
     p.doi ? `<a href="${esc(doiUrl(p.doi))}" target="_blank" rel="noopener">DOI ↗</a>` : "",
   ].filter(Boolean).join("");
   return `<li class="pub"><div class="yr">${esc(p.tahun)}</div><div style="min-width:0">
-    <div class="m">${esc(p.jenis)} · ${accBadge(p)}</div><h3>${hl(p.tajuk)}</h3>
+    <div class="m">${esc(jL(p.jenis))} · ${accBadge(p)}</div><h3>${hl(p.tajuk)}</h3>
     <div class="m">${esc(p.penulis.join(", "))}${meta ? " — " + meta : ""}</div>
-    ${p.catatan ? `<div class="m" style="margin-top:4px;color:var(--ink)">${esc(p.catatan)}</div>` : ""}
-    ${rel ? `<div class="acts"><span class="m">Dakwaan berkait:</span>${rel}</div>` : ""}
+    ${p.catatan ? `<div class="m" style="margin-top:4px;color:var(--ink)">${esc(catL(p))}</div>` : ""}
+    ${rel ? `<div class="acts"><span class="m">${L("Dakwaan berkait:","Related claims:")}</span>${rel}</div>` : ""}
     <div class="acts">${acts}</div></div></li>`;
 }
 function pubList(){
   const hits = P.filter(p => (!pst.pdf || p.pdf) && (!pst.rel || p.berkait.length) && (!pst.jenis || p.jenis === pst.jenis) &&
-    (!pst.q || (p.tajuk + " " + p.terbitan + " " + p.catatan).toLowerCase().includes(pst.q.toLowerCase())))
+    (!pst.q || (p.tajuk + " " + p.terbitan + " " + p.catatan + " " + ((A.pub_en || {})[p.id] || "")).toLowerCase().includes(pst.q.toLowerCase())))
     .sort((a, b) => pst.susun === "lama" ? a.tahun.localeCompare(b.tahun) : b.tahun.localeCompare(a.tahun));
-  return `<p class="count">${hits.length} daripada ${P.length} penerbitan</p>` +
-    (hits.length ? `<ul class="pubs">${hits.map(pubHTML).join("")}</ul>` : `<p class="empty">Tiada penerbitan sepadan.</p>`);
+  return `<p class="count">${L(`${hits.length} daripada ${P.length} penerbitan`, `${hits.length} of ${P.length} publications`)}</p>` +
+    (hits.length ? `<ul class="pubs">${hits.map(pubHTML).join("")}</ul>` : `<p class="empty">${L("Tiada penerbitan sepadan.","No matching publications.")}</p>`);
 }
 function viewPenerbitan(){
   const jenis = [...new Set(P.map(p => p.jenis))];
   st.q = pst.q;
-  app.innerHTML = `<div class="wrap prose" style="padding-bottom:0;max-width:none"><div class="eyebrow" style="margin-top:28px">Rekod akademik</div>
-    <h1 style="font-size:clamp(32px,5vw,52px)">Penerbitan Solehah Yaacob</h1>
-    <p class="lede" style="max-width:62ch">Artikel jurnal, buku dan kertas persidangan beliau, kebanyakannya daripada repositori rasmi UIAM (IRep). Yang ada PDF terbuka boleh dibaca terus di sini; fail dipaparkan daripada sumber asal, tidak disalin.</p></div>
+  app.innerHTML = `<div class="wrap prose" style="padding-bottom:0;max-width:none"><div class="eyebrow" style="margin-top:28px">${L("Rekod akademik","Academic record")}</div>
+    <h1 style="font-size:clamp(32px,5vw,52px)">${L("Penerbitan Solehah Yaacob","Publications by Solehah Yaacob")}</h1>
+    <p class="lede" style="max-width:62ch">${L("Artikel jurnal, buku dan kertas persidangan beliau, kebanyakannya daripada repositori rasmi UIAM (IRep). Yang ada PDF terbuka boleh dibaca terus di sini; fail dipaparkan daripada sumber asal, tidak disalin.",
+      "Her journal articles, books and conference papers, mostly from IIUM's official repository (IRep). Those with an open PDF can be read right here; files are displayed from the original source, not copied. Titles are given in their original language.")}</p></div>
   <div class="wrap"><div class="tools">
-    <input type="search" id="pq" placeholder="Cari tajuk atau jurnal…" aria-label="Cari penerbitan" value="${esc(pst.q)}">
-    <select id="ps" aria-label="Susun"><option value="baru"${pst.susun==="baru"?" selected":""}>Terbaru dahulu</option><option value="lama"${pst.susun==="lama"?" selected":""}>Terlama dahulu</option></select>
-    <select id="pj" aria-label="Jenis"><option value="">Semua jenis</option>${jenis.map(j => `<option${pst.jenis===j?" selected":""}>${esc(j)}</option>`).join("")}</select>
-    <label class="tog"><input type="checkbox" id="pp"${pst.pdf?" checked":""}> Ada PDF</label>
-    <label class="tog"><input type="checkbox" id="pr"${pst.rel?" checked":""}> Berkait dakwaan</label>
+    <input type="search" id="pq" placeholder="${L("Cari tajuk atau jurnal…","Search titles or journals…")}" aria-label="${L("Cari penerbitan","Search publications")}" value="${esc(pst.q)}">
+    <select id="ps" aria-label="${L("Susun","Sort")}"><option value="baru"${pst.susun==="baru"?" selected":""}>${L("Terbaru dahulu","Newest first")}</option><option value="lama"${pst.susun==="lama"?" selected":""}>${L("Terlama dahulu","Oldest first")}</option></select>
+    <select id="pj" aria-label="${L("Jenis","Type")}"><option value="">${L("Semua jenis","All types")}</option>${jenis.map(j => `<option value="${esc(j)}"${pst.jenis===j?" selected":""}>${esc(jL(j))}</option>`).join("")}</select>
+    <label class="tog"><input type="checkbox" id="pp"${pst.pdf?" checked":""}> ${L("Ada PDF","Has PDF")}</label>
+    <label class="tog"><input type="checkbox" id="pr"${pst.rel?" checked":""}> ${L("Berkait dakwaan","Linked to claims")}</label>
   </div><div id="plist">${pubList()}</div></div>`;
   const re = () => { st.q = pst.q; document.getElementById("plist").innerHTML = pubList(); };
   document.getElementById("pq").addEventListener("input", e => { pst.q = e.target.value.trim(); re(); });
@@ -591,24 +644,25 @@ function viewPenerbitan(){
 }
 function viewPdf(id){
   const p = pById[id];
-  if (!p || !p.pdf){ app.innerHTML = `<div class="wrap prose"><h2>PDF tiada</h2><p><a href="#penerbitan">Kembali ke senarai penerbitan</a>.</p></div>`; return; }
+  if (!p || !p.pdf){ app.innerHTML = `<div class="wrap prose"><h2>${L("PDF tiada","PDF not available")}</h2><p><a href="#penerbitan">${L("Kembali ke senarai penerbitan","Back to publications")}</a>.</p></div>`; return; }
   st.q = "";
   const mobile = matchMedia("(max-width: 760px), (pointer: coarse)").matches;
   const gview = "https://docs.google.com/gview?embedded=1&url=" + encodeURIComponent(p.pdf);
   const rel = p.berkait.map(cid => `<a class="chip" href="#d-${cid}">${cid}</a>`).join("");
   app.innerHTML = `<div class="wrap">
-    <div class="crumb"><a href="#penerbitan">Penerbitan</a> / ${esc(p.tahun)} / <b>${esc(p.jenis)}</b></div>
+    <div class="crumb"><a href="#penerbitan">${L("Penerbitan","Publications")}</a> / ${esc(p.tahun)} / <b>${esc(jL(p.jenis))}</b></div>
     <h1 style="font:clamp(22px,3.2vw,32px)/1.25 var(--f-oldi);margin:4px 0 6px">${esc(p.tajuk)}</h1>
-    <p class="m" style="color:var(--ink-2);margin:0 0 12px">${esc(p.penulis.join(", "))}${p.terbitan ? " — " + esc(p.terbitan) : ""}${p.isu ? ", " + esc(p.isu) : ""}${p.catatan ? `<br><span style="color:var(--ink)">${esc(p.catatan)}</span>` : ""}</p>
-    ${rel ? `<p class="m" style="margin:0 0 12px">Dakwaan berkait: ${rel}</p>` : ""}
+    <p class="m" style="color:var(--ink-2);margin:0 0 12px">${esc(p.penulis.join(", "))}${p.terbitan ? " — " + esc(p.terbitan) : ""}${p.isu ? ", " + esc(p.isu) : ""}${p.catatan ? `<br><span style="color:var(--ink)">${esc(catL(p))}</span>` : ""}</p>
+    ${rel ? `<p class="m" style="margin:0 0 12px">${L("Dakwaan berkait:","Related claims:")} ${rel}</p>` : ""}
     <div class="tools" style="padding-top:0">
-      ${ART ? "" : `<div class="seg" role="group" aria-label="Jenis pembaca"><button id="v1" aria-pressed="${!mobile}">Pembaca terus</button><button id="v2" aria-pressed="${mobile}">Pembaca Google</button></div>`}
-      <a class="btn alt" href="${esc(p.pdf)}" target="_blank" rel="noopener">Buka / muat turun PDF ↗</a>
-      ${p.halaman ? `<a class="btn alt" href="${esc(p.halaman)}" target="_blank" rel="noopener">Rekod IRep ↗</a>` : ""}
+      ${ART ? "" : `<div class="seg" role="group" aria-label="${L("Jenis pembaca","Viewer")}"><button id="v1" aria-pressed="${!mobile}">${L("Pembaca terus","Direct viewer")}</button><button id="v2" aria-pressed="${mobile}">${L("Pembaca Google","Google viewer")}</button></div>`}
+      <a class="btn alt" href="${esc(p.pdf)}" target="_blank" rel="noopener">${L("Buka / muat turun PDF","Open / download PDF")} ↗</a>
+      ${p.halaman ? `<a class="btn alt" href="${esc(p.halaman)}" target="_blank" rel="noopener">${L("Rekod IRep","IRep record")} ↗</a>` : ""}
     </div>
-    ${ART ? `<p class="empty">Pembaca PDF terbenam hanya ada di laman utama arkib. Guna butang di atas untuk membuka fail.</p>`
+    ${ART ? `<p class="empty">${L("Pembaca PDF terbenam hanya ada di laman utama arkib. Guna butang di atas untuk membuka fail.","The embedded PDF viewer is only on the main archive site. Use the button above to open the file.")}</p>`
           : `<div class="pdfbox"><iframe id="pdfi" title="${esc(p.tajuk)}" src="${esc(mobile ? gview : p.pdf)}"></iframe></div>
-             <p class="vnote">Fail dipaparkan terus daripada ${esc(p.sumber === "Penerbit" ? "laman penerbit" : "repositori IRep UIAM")}; hak cipta kekal milik penulis/penerbit. Jika pembaca kosong, cuba “Pembaca Google” atau buka PDF di tab baru.</p>`}
+             <p class="vnote">${L(`Fail dipaparkan terus daripada ${p.sumber === "Penerbit" ? "laman penerbit" : "repositori IRep UIAM"}; hak cipta kekal milik penulis/penerbit. Jika pembaca kosong, cuba “Pembaca Google” atau buka PDF di tab baru.`,
+               `The file is displayed directly from ${p.sumber === "Penerbit" ? "the publisher's site" : "IIUM's IRep repository"}; copyright remains with the author/publisher. If the viewer is blank, try the “Google viewer” or open the PDF in a new tab.`)}</p>`}
   </div>`;
   if (!ART){
     const fr = document.getElementById("pdfi"), b1 = document.getElementById("v1"), b2 = document.getElementById("v2");
@@ -623,12 +677,12 @@ function loadTikTok(cb){
   if (window.TIKTOK) return cb();
   const v = (document.querySelector('script[src^="data/arkib.js"]')?.getAttribute("src").split("v=")[1]) || "0";
   const s = document.createElement("script"); s.src = "data/tiktok.js?v=" + v;
-  s.onload = cb; s.onerror = () => { app.innerHTML = `<div class="wrap prose"><p class="empty">Data TikTok belum tersedia.</p></div>`; };
+  s.onload = cb; s.onerror = () => { app.innerHTML = `<div class="wrap prose"><p class="empty">${L("Data TikTok belum tersedia.","TikTok data is not available yet.")}</p></div>`; };
   document.head.appendChild(s);
 }
 const fmtDur = s => s >= 3600 ? fmt(s) : `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
-const fmtViews = n => n >= 1e6 ? (n/1e6).toFixed(1) + "J" : n >= 1e3 ? (n/1e3).toFixed(n >= 1e4 ? 0 : 1) + "K" : String(n);
-const fmtDate = t => { if (!t) return "Tarikh tak pasti"; const [y,m,d] = t.split("-"); return `${+d} ${["Jan","Feb","Mac","Apr","Mei","Jun","Jul","Ogos","Sep","Okt","Nov","Dis"][+m-1]} ${y}`; };
+const fmtViews = n => n >= 1e6 ? (n/1e6).toFixed(1) + L("J","M") : n >= 1e3 ? (n/1e3).toFixed(n >= 1e4 ? 0 : 1) + "K" : String(n);
+const fmtDate = t => { if (!t) return L("Tarikh tak pasti","Date uncertain"); const [y,m,d] = t.split("-"); return tgl(`${+d} ${["Jan","Feb","Mac","Apr","Mei","Jun","Jul","Ogos","Sep","Okt","Nov","Dis"][+m-1]} ${y}`); };
 function ttHits(){
   const q = tst.q.toLowerCase();
   let r = window.TIKTOK.filter(v => (!tst.tahun || v.t.startsWith(tst.tahun)) && (!tst.tx || v.tx) &&
@@ -645,36 +699,37 @@ function ttSnippet(v){
 }
 function ttCard(v){
   return `<li class="tt" id="tt-${v.id}">
-    <div class="tt-h"><span class="tt-d">${fmtDate(v.t)}</span><span class="m">${fmtDur(v.d)} · ${fmtViews(v.v)} tontonan · @${esc(v.a)}</span></div>
-    <p class="tt-ti">${hl(v.ti || "(tiada kapsyen)")}</p>${ttSnippet(v)}
-    <div class="btns"><button class="btn alt" type="button" data-play="${v.id}">▶ Tonton</button>
-      ${v.tx ? `<button class="btn alt" type="button" data-tx="${v.id}">Transkrip</button>` : `<span class="m">Transkrip belum ada</span>`}
-      <a href="https://www.tiktok.com/@${esc(v.a)}/video/${v.id}" target="_blank" rel="noopener">Buka di TikTok ↗</a></div>
+    <div class="tt-h"><span class="tt-d">${fmtDate(v.t)}</span><span class="m">${fmtDur(v.d)} · ${fmtViews(v.v)} ${L("tontonan","views")} · @${esc(v.a)}</span></div>
+    <p class="tt-ti">${hl(v.ti || L("(tiada kapsyen)","(no caption)"))}</p>${ttSnippet(v)}
+    <div class="btns"><button class="btn alt" type="button" data-play="${v.id}">▶ ${L("Tonton","Watch")}</button>
+      ${v.tx ? `<button class="btn alt" type="button" data-tx="${v.id}">${L("Transkrip","Transcript")}</button>` : `<span class="m">${L("Transkrip belum ada","No transcript yet")}</span>`}
+      <a href="https://www.tiktok.com/@${esc(v.a)}/video/${v.id}" target="_blank" rel="noopener">${L("Buka di TikTok","Open on TikTok")} ↗</a></div>
     <div class="tt-slot" hidden></div>
-    ${v.tx ? `<div class="tt-tx" hidden><p>${hl(v.tx)}</p><p class="vnote">${v.s === "whisper" ? "Transkrip automatik (Whisper)." : "Sari kata automatik TikTok."} Mungkin ada salah eja.</p></div>` : ""}
+    ${v.tx ? `<div class="tt-tx" hidden lang="ms"><p>${hl(v.tx)}</p><p class="vnote" lang="${LANG}">${v.s === "whisper" ? L("Transkrip automatik (Whisper).","Automatic transcript (Whisper), in Malay.") : L("Sari kata automatik TikTok.","TikTok's automatic captions, in Malay.")} ${L("Mungkin ada salah eja.","May contain misspellings.")}</p></div>` : ""}
   </li>`;
 }
 function ttList(){
   const r = ttHits(), shown = r.slice(0, tst.n);
   const jam = Math.round(window.TIKTOK.reduce((s, v) => s + v.d, 0) / 3600);
-  return `<p class="count">${r.length} daripada ${window.TIKTOK.length} video (${jam} jam)${tst.q ? ` mengandungi “${esc(tst.q)}”` : ""}</p>
+  return `<p class="count">${L(`${r.length} daripada ${window.TIKTOK.length} video (${jam} jam)`, `${r.length} of ${window.TIKTOK.length} videos (${jam} hours)`)}${tst.q ? L(` mengandungi “${esc(tst.q)}”`, ` containing “${esc(tst.q)}”`) : ""}</p>
     <ul class="tts">${shown.map(ttCard).join("")}</ul>
-    ${r.length > tst.n ? `<div class="btns" style="justify-content:center;margin:18px 0"><button class="btn" id="ttmore" type="button">Tunjuk ${Math.min(30, r.length - tst.n)} lagi</button></div>` : ""}`;
+    ${r.length > tst.n ? `<div class="btns" style="justify-content:center;margin:18px 0"><button class="btn" id="ttmore" type="button">${L(`Tunjuk ${Math.min(30, r.length - tst.n)} lagi`, `Show ${Math.min(30, r.length - tst.n)} more`)}</button></div>` : ""}`;
 }
 function viewTikTok(){
   st.q = tst.q;
-  app.innerHTML = `<div class="wrap prose" style="padding-bottom:0;max-width:none"><div class="eyebrow" style="margin-top:28px">Video pendek</div>
-    <h1 style="font-size:clamp(32px,5vw,52px)">TikTok Solehah Yaacob</h1>
-    <p class="lede" style="max-width:62ch">Semua video di akaun @solehah_yaacob dan @prof.solehah, dengan transkrip yang boleh dicari. Cari satu perkataan untuk jumpa video yang menyebutnya.</p></div>
-  <div class="wrap"><p class="empty" id="ttload">Memuatkan senarai video…</p></div>`;
+  app.innerHTML = `<div class="wrap prose" style="padding-bottom:0;max-width:none"><div class="eyebrow" style="margin-top:28px">${L("Video pendek","Short videos")}</div>
+    <h1 style="font-size:clamp(32px,5vw,52px)">${L("TikTok Solehah Yaacob","Solehah Yaacob on TikTok")}</h1>
+    <p class="lede" style="max-width:62ch">${L("Semua video di akaun @solehah_yaacob dan @prof.solehah, dengan transkrip yang boleh dicari. Cari satu perkataan untuk jumpa video yang menyebutnya.",
+      "Every video on the @solehah_yaacob and @prof.solehah accounts, with searchable transcripts. The videos and transcripts are in Malay, so search with Malay words or names (e.g. Rom, Keturah, Hang Tuah).")}</p></div>
+  <div class="wrap"><p class="empty" id="ttload">${L("Memuatkan senarai video…","Loading the video list…")}</p></div>`;
   loadTikTok(() => {
     const years = [...new Set(window.TIKTOK.map(v => v.t.slice(0,4)).filter(Boolean))].sort().reverse();
     app.querySelector(".wrap:last-child").innerHTML = `<div class="tools">
-      <input type="search" id="tq" placeholder="Cari dalam transkrip: Keturah, Rom, meteor, Hang Tuah…" aria-label="Cari video TikTok" value="${esc(tst.q)}"></div>
+      <input type="search" id="tq" placeholder="${L("Cari dalam transkrip: Keturah, Rom, meteor, Hang Tuah…","Search transcripts (Malay): Keturah, Rom, meteor, Hang Tuah…")}" aria-label="${L("Cari video TikTok","Search TikTok videos")}" value="${esc(tst.q)}"></div>
       <div class="tools filters">
-        <label class="fl">Susun<select id="ts"><option value="baru">Terbaru dahulu</option><option value="lama">Terlama dahulu</option><option value="tonton">Paling ramai tonton</option></select></label>
-        <label class="fl">Tahun<select id="ty"><option value="">Semua</option>${years.map(y => `<option>${y}</option>`).join("")}</select></label>
-        <label class="tog"><input type="checkbox" id="tx"${tst.tx ? " checked" : ""}> Ada transkrip</label>
+        <label class="fl">${L("Susun","Sort")}<select id="ts"><option value="baru">${L("Terbaru dahulu","Newest first")}</option><option value="lama">${L("Terlama dahulu","Oldest first")}</option><option value="tonton">${L("Paling ramai tonton","Most viewed")}</option></select></label>
+        <label class="fl">${L("Tahun","Year")}<select id="ty"><option value="">${L("Semua","All")}</option>${years.map(y => `<option>${y}</option>`).join("")}</select></label>
+        <label class="tog"><input type="checkbox" id="tx"${tst.tx ? " checked" : ""}> ${L("Ada transkrip","Has transcript")}</label>
       </div><div id="ttlist">${ttList()}</div>`;
     document.getElementById("ts").value = tst.susun; document.getElementById("ty").value = tst.tahun;
     let timer;
@@ -687,18 +742,34 @@ function viewTikTok(){
       const more = e.target.closest("#ttmore"); if (more){ tst.n += 30; re(); return; }
       const p = e.target.closest("[data-play]");
       if (p){ const slot = p.closest("li").querySelector(".tt-slot");
-        if (slot.hidden){ slot.innerHTML = ART ? `<p class="empty">Video tak boleh dimainkan dalam versi ini. Guna “Buka di TikTok”.</p>` : `<div class="ttvideo"><iframe title="Video TikTok" src="https://www.tiktok.com/player/v1/${p.dataset.play}?description=1&rel=0" allow="fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>`; slot.hidden = false; p.textContent = "Tutup video"; }
-        else { slot.hidden = true; slot.innerHTML = ""; p.textContent = "▶ Tonton"; } return; }
+        if (slot.hidden){ slot.innerHTML = ART ? `<p class="empty">${L("Video tak boleh dimainkan dalam versi ini. Guna “Buka di TikTok”.","Videos cannot play in this version. Use “Open on TikTok”.")}</p>` : `<div class="ttvideo"><iframe title="${L("Video TikTok","TikTok video")}" src="https://www.tiktok.com/player/v1/${p.dataset.play}?description=1&rel=0" allow="fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>`; slot.hidden = false; p.textContent = L("Tutup video","Close video"); }
+        else { slot.hidden = true; slot.innerHTML = ""; p.textContent = "▶ " + L("Tonton","Watch"); } return; }
       const t = e.target.closest("[data-tx]");
-      if (t){ const box = t.closest("li").querySelector(".tt-tx"); box.hidden = !box.hidden; t.textContent = box.hidden ? "Transkrip" : "Tutup transkrip"; }
+      if (t){ const box = t.closest("li").querySelector(".tt-tx"); box.hidden = !box.hidden; t.textContent = box.hidden ? L("Transkrip","Transcript") : L("Tutup transkrip","Close transcript"); }
     });
   });
 }
 function viewKronologi(){
-  app.innerHTML = `<div class="wrap prose"><div class="eyebrow" style="margin-top:28px">Garis masa</div><h1 style="font-size:clamp(32px,5vw,52px)">Kronologi</h1>
-  <ol class="tl">${A.kronologi.map(([d,e]) => `<li><b>${esc(d)}</b>${esc(e)}</li>`).join("")}</ol></div>`;
+  const K = EN() && A.kronologi_en ? A.kronologi_en : A.kronologi;
+  app.innerHTML = `<div class="wrap prose"><div class="eyebrow" style="margin-top:28px">${L("Garis masa","Timeline")}</div><h1 style="font-size:clamp(32px,5vw,52px)">${L("Kronologi","Timeline")}</h1>
+  <ol class="tl">${K.map(([d,e]) => `<li><b>${esc(d)}</b>${esc(e)}</li>`).join("")}</ol></div>`;
 }
 function viewTentang(){
+  if (EN()){ app.innerHTML = `<div class="wrap prose"><div class="eyebrow" style="margin-top:28px">Method</div><h1 style="font-size:clamp(32px,5vw,52px)">About this archive</h1>
+  <p>This archive collects Solehah Yaacob's <b>public</b> statements on history, religion and science, from lectures, podcasts, videos and social-media posts since 2018, along with news coverage. Every claim is tied to its original source so anyone can watch it and judge for themselves.</p>
+  <h2>Language</h2>
+  <p>The archive's primary language is Malay, the language in which the claims were made. The English version is translated by the archive. Each claim page shows the original Malay wording beneath the translation; for her exact words, watch the clip. Videos, transcripts and most rebuttals are in Malay.</p>
+  <h2>Fact-check status</h2>
+  <p>${pill("Salah")} contradicted by clear evidence · ${pill("Tak disokong")} no evidence found · ${pill("Belum dapat disahkan")} the cited source could not be accessed · ${pill("Sebahagian betul")} has some basis but is distorted · ${pill("Betul")} supported by evidence · ${pill("")} not yet checked.</p>
+  <p>The short note on each claim is a summary, not a full study. If there is a mistake, send a rebuttal with sources and the status will be updated.</p>
+  <h2>Transcripts</h2>
+  <p>Most claims were transcribed by hand; some with automatic transcription (Whisper). Timestamps marked “approximate” were matched automatically and may be off by a few seconds to minutes.</p>
+  <h2>Right of reply</h2>
+  <p>Solehah Yaacob or her representatives may send an explanation or correction for any claim using the “Send a rebuttal” button. Explanations with sources will be shown alongside the claim.</p>
+  <h2>Comment guidelines</h2>
+  <p>Discuss the claims, not the person. Bring sources. Comments that insult, contain personal information or threats will be removed.</p>
+  <h2>Copyright</h2>
+  <p>Videos play through the official YouTube, Facebook and TikTok players from the original channels; no video is copied to this site. Quotations are made for the purpose of review and criticism.</p></div>`; return; }
   app.innerHTML = `<div class="wrap prose"><div class="eyebrow" style="margin-top:28px">Kaedah</div><h1 style="font-size:clamp(32px,5vw,52px)">Tentang arkib ini</h1>
   <p>Arkib ini mengumpul kenyataan <b>awam</b> Solehah Yaacob tentang sejarah, agama dan sains, daripada ceramah, podcast, video dan hantaran media sosial sejak 2018, berserta liputan berita. Setiap dakwaan diikat pada sumber asalnya supaya sesiapa pun boleh tonton dan nilai sendiri.</p>
   <h2>Status semakan</h2>
@@ -711,7 +782,9 @@ function viewTentang(){
   <h2>Garis panduan komen</h2>
   <p>Bincang dakwaan, bukan peribadi. Bawa sumber. Komen yang menghina, mengandungi maklumat peribadi atau ugutan akan dipadam.</p>
   <h2>Hak cipta</h2>
-  <p>Video dimainkan melalui pemain rasmi YouTube daripada saluran asal; tiada video disalin ke laman ini. Petikan dibuat untuk tujuan ulasan dan kritikan.</p></div>`;
+  <p>Video dimainkan melalui pemain rasmi YouTube, Facebook dan TikTok daripada saluran asal; tiada video disalin ke laman ini. Petikan dibuat untuk tujuan ulasan dan kritikan.</p>
+  <h2>Bahasa</h2>
+  <p>Bahasa utama arkib ini ialah Bahasa Melayu. Versi English (butang EN di atas) diterjemah oleh pihak arkib untuk pembaca antarabangsa; teks asal BM sentiasa dipaparkan di halaman setiap dakwaan.</p></div>`;
 }
 
 function route(){
@@ -729,9 +802,11 @@ function route(){
   else if (r === "kronologi") viewKronologi();
   else if (r === "tentang") viewTentang();
   else viewHome(false);
-  document.title = r === "detail" && byId[h.slice(2)] ? `${h.slice(2)} · Arkib Dakwaan Solehah` : "Arkib Dakwaan Solehah";
+  const nama = L("Arkib Dakwaan Solehah", "Solehah Claims Archive");
+  document.title = r === "detail" && byId[h.slice(2)] ? `${h.slice(2)} · ${nama}` : nama;
 }
 window.addEventListener("hashchange", route);
+chrome();
 route();
 })();
 </script>
