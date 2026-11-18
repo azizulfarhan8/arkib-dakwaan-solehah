@@ -305,9 +305,9 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-block:22px calc(
 </svg>
 </template>
 
-<script src="config.js?v=202611181156"></script>
-<script src="data/penerbitan.js?v=202611181156"></script>
-<script src="data/arkib.js?v=202611181156"></script>
+<script src="config.js?v=202611181206"></script>
+<script src="data/penerbitan.js?v=202611181206"></script>
+<script src="data/arkib.js?v=202611181206"></script>
 <script>
 (function(){
 const A = window.ARKIB, C = window.ARKIB_CONFIG || {};
@@ -840,8 +840,8 @@ function viewSanggahan(focus){
       [L("Jawatan","Position"), esc(oF(o, "jawatan"))],
       oF(o, "bidang") ? [L("Bidang","Field"), esc(oF(o, "bidang"))] : null,
       oF(o, "nota") ? [L("Catatan","Note"), esc(oF(o, "nota"))] : null,
-      o.profil ? [L("Profil","Profile"), `<a href="${esc(o.profil)}" target="_blank" rel="noopener">${esc(o.profil.replace(/^https?:\/\/(www\.)?/, "").split("/")[0])} ↗</a>${o.sosial ? ` · <a href="${esc(o.sosial)}" target="_blank" rel="noopener">Facebook ↗</a>` : ""}`]
-               : (o.sosial ? [L("Profil","Profile"), `<a href="${esc(o.sosial)}" target="_blank" rel="noopener">Facebook ↗</a>`] : null),
+      o.profil ? [L("Profil","Profile"), `<a href="${esc(o.profil)}" target="_blank" rel="noopener">${esc(o.profil.replace(/^https?:\/\/(www\.)?/, "").split("/")[0])} ↗</a>${o.sosial ? ` · <a href="${esc(o.sosial)}" target="_blank" rel="noopener">${/youtube/.test(o.sosial) ? "YouTube" : "Facebook"} ↗</a>` : ""}`]
+               : (o.sosial ? [L("Profil","Profile"), `<a href="${esc(o.sosial)}" target="_blank" rel="noopener">${/youtube/.test(o.sosial) ? "YouTube" : "Facebook"} ↗</a>`] : null),
     ].filter(Boolean);
     return `<details class="pp" id="s-${o.id}"${focus === o.id ? " open" : ""}>
       <summary>${avatar(o)}<span style="min-width:0"><p class="pp-n">${esc(o.nama)}</p><p class="pp-j">${esc(oF(o, "jawatan"))}</p></span>
