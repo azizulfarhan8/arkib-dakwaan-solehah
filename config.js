@@ -1,11 +1,11 @@
 // Tetapan laman. Isi selepas ikut PANDUAN-SETUP.md — laman tetap berfungsi walaupun kosong.
 window.ARKIB_CONFIG = {
   // Alamat laman selepas diterbitkan, contoh "https://namakau.github.io/arkib-dakwaan-solehah/"
-  siteUrl: "https://azizulfarhan8.github.io/arkib-dakwaan-solehah/",
+  siteUrl: "https://thepatriots-asia.github.io/arkib-dakwaan-solehah/",
 
   // Komen (Giscus, perlu repo GitHub dengan Discussions). Dapatkan nilai dari https://giscus.app
   giscus: {
-    repo: "azizulfarhan8/arkib-dakwaan-solehah",
+    repo: "thepatriots-asia/arkib-dakwaan-solehah",
     repoId: "R_kgDOVxVCag",
     category: "Komen",
     categoryId: "DIC_kwDOVxVCas4DLURc"
