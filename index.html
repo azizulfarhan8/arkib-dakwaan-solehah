@@ -58,6 +58,36 @@ button,input,select{font:inherit;color:inherit}
 .lang{display:inline-flex;border:1px solid var(--rule);border-radius:7px;overflow:hidden;flex:none}
 .lang button{border:0;background:transparent;padding:5px 9px;font:600 12px/1 var(--f-mono);letter-spacing:.06em;color:var(--ink-2);cursor:pointer}
 .lang button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+/* sanggahan: kad penyanggah */
+.ppl{display:grid;gap:10px;margin:0 0 8px}
+.pp{background:var(--card);border:1px solid var(--rule);border-radius:10px;min-width:0;scroll-margin-top:130px}
+.pp>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;padding:14px 16px}
+.pp>summary::-webkit-details-marker{display:none}
+.pp>summary:hover{background:color-mix(in srgb,var(--gold-soft) 45%,transparent);border-radius:10px}
+.pp[open]>summary{border-bottom:1px solid var(--rule);border-radius:10px 10px 0 0}
+.av{width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);background:var(--ink);color:var(--paper);display:grid;place-items:center;font:22px/1 var(--f-old);flex:none}
+.av.sm{width:26px;height:26px;font-size:11px;border-width:1.5px}
+.pp-n{font:600 17px/1.25 var(--f-body);margin:0}
+.pp-j{font-size:13.5px;color:var(--ink-2);margin:2px 0 0}
+.pp-c{font:500 12px/1 var(--f-mono);color:var(--ink-2);white-space:nowrap;text-align:right}
+.pp-c b{display:block;font:22px/1 var(--f-old);color:var(--gold);margin-bottom:3px}
+.pp-c .chev{display:inline-block;transition:transform .15s}
+.pp[open] .pp-c .chev{transform:rotate(180deg)}
+.pp-body{padding:12px 16px 16px}
+.pp-cred{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px;margin:0 0 12px;padding:10px 12px;border-left:3px solid var(--betul);background:color-mix(in srgb,var(--betul-bg) 55%,transparent);border-radius:0 6px 6px 0}
+.pp-cred dt{color:var(--ink-2);font:600 11px/1.9 var(--f-mono);letter-spacing:.05em;text-transform:uppercase}
+.pp-cred dd{margin:0;min-width:0}
+.pp-cred a{overflow-wrap:anywhere}
+.sg-h{font:20px/1.25 var(--f-old);margin:26px 0 10px}
+.jn{font:600 10.5px/1 var(--f-mono);letter-spacing:.05em;text-transform:uppercase;padding:4px 6px;border-radius:4px;white-space:nowrap}
+.jn-sanggahan{color:var(--salah);background:var(--salah-bg)} .jn-bacaan{color:var(--seb);background:var(--seb-bg)} .jn-jemputan{color:var(--tak);background:var(--tak-bg)}
+.callout{border:1px solid var(--tak);background:var(--tak-bg);border-radius:10px;padding:14px 16px;margin:16px 0 4px}
+.callout h3{font:18px/1.2 var(--f-old);margin:0 0 6px}
+.txbox{margin-top:10px;max-height:420px;overflow:auto;padding:10px 12px;border:1px solid var(--rule);border-radius:6px;font-size:14.5px;line-height:1.65}
+.txbox p{margin:0 0 8px;overflow-wrap:anywhere}
+.txbox a{font:500 12px var(--f-mono);color:var(--gold);margin-right:6px}
+.who{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:600}
+@media (max-width:560px){.pp>summary{grid-template-columns:48px 1fr;}.pp-c{grid-column:2;text-align:left}.pp-c b{display:inline;margin-right:4px;font-size:16px}.av{width:48px;height:48px;font-size:17px}.pp-cred{grid-template-columns:1fr}}
 .orig{margin:-8px 0 16px;font-size:14px;color:var(--ink-2);max-width:68ch}
 .orig b{font:600 11px/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;margin-right:6px}
 
@@ -213,6 +243,7 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-block:22px calc(
   <nav aria-label="Utama">
     <a href="#" data-r="home">Dakwaan</a>
     <a href="#fatal" data-r="fatal">50 Paling Fatal</a>
+    <a href="#sanggahan" data-r="sanggahan">Sanggahan</a>
     <a href="#tiktok" data-r="tiktok">TikTok</a>
     <a href="#penerbitan" data-r="penerbitan">Penerbitan</a>
     <a href="#kronologi" data-r="kronologi">Kronologi</a>
@@ -274,9 +305,9 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-block:22px calc(
 </svg>
 </template>
 
-<script src="config.js?v=202611181051"></script>
-<script src="data/penerbitan.js?v=202611181051"></script>
-<script src="data/arkib.js?v=202611181051"></script>
+<script src="config.js?v=202611181135"></script>
+<script src="data/penerbitan.js?v=202611181135"></script>
+<script src="data/arkib.js?v=202611181135"></script>
 <script>
 (function(){
 const A = window.ARKIB, C = window.ARKIB_CONFIG || {};
@@ -306,7 +337,7 @@ const TAHUN = [...new Set(A.sumber.map(tahunOf))].filter(y => y !== "?").sort().
 const app = document.getElementById("app");
 function chrome(){
   document.documentElement.lang = LANG;
-  const N = {home: L("Dakwaan","Claims"), fatal: L("50 Paling Fatal","50 Most Fatal"), tiktok: "TikTok",
+  const N = {home: L("Dakwaan","Claims"), fatal: L("50 Paling Fatal","50 Most Fatal"), sanggahan: L("Sanggahan","Rebuttals"), tiktok: "TikTok",
     penerbitan: L("Penerbitan","Publications"), kronologi: L("Kronologi","Timeline"), tentang: L("Tentang","About")};
   document.querySelectorAll(".nav nav a").forEach(a => a.textContent = N[a.dataset.r]);
   document.querySelector(".nav nav").setAttribute("aria-label", L("Utama","Main"));
@@ -465,18 +496,69 @@ function viewHome(fatal){
 
 // Sanggahan The Patriots: hantaran Facebook boleh dibuka terus (dimuat hanya bila diklik)
 const isFb = u => /facebook\.com\/(photo|reel|watch|[^/]+\/posts)/.test(u);
+// ---- Sanggahan: setiap item diikat pada penyanggah (sejarawan, penulis, pengulas) ----
+const SG = A.sanggahan || [], PY = A.penyanggah || {orang: [], kategori: {}};
+const PG = Object.fromEntries(PY.orang.map(o => [o.id, o]));
+const KAT = Object.keys(PY.kategori || {});
+const katL = k => (PY.kategori[k] || [k, k])[EN() ? 1 : 0];
+const oF = (o, k) => EN() && o[k + "_en"] ? o[k + "_en"] : o[k];
+const GELARAN = /^(Prof\.?|Profesor|Madya|Emeritus|Datuk|Dato'?|Ir|Dr|The)$/;
+const inisial = n => n.split(/\s+/).filter(w => !GELARAN.test(w) && /^[A-Z]/.test(w)).slice(0, 2).map(w => w[0]).join("");
+const avatar = (o, sm) => o.foto ? `<img class="av${sm ? " sm" : ""}" src="penyanggah/${esc(o.foto)}" alt="" width="64" height="64" loading="lazy">` : `<span class="av${sm ? " sm" : ""}" aria-hidden="true">${esc(inisial(o.nama))}</span>`;
+const JN = {sanggahan: ["Sanggahan","Rebuttal"], bacaan: ["Bacaan pakar","Expert reading"], jemputan: ["Jemputan dialog","Invitation to debate"]};
+const jnL = j => (JN[j] || JN.sanggahan)[EN() ? 1 : 0];
+const katOf = x => (PG[x.oleh[0]] || {}).kategori || "penulis";
+function sgItemHTML(x, withClaims){
+  const who = x.oleh.map(id => PG[id]).filter(Boolean).map(o => `<a class="who" href="#s-${o.id}">${avatar(o, true)}${esc(o.nama)}</a>`).join(", ");
+  const claims = withClaims ? x.dakwaan.map(id => `<a class="chip" href="#d-${id}" title="${esc(byId[id] ? tD(byId[id].d) : "")}">${id}</a>`).join("") : "";
+  return `<li>
+    <span><span class="jn jn-${esc(x.jenis)}">${jnL(x.jenis)}</span></span>
+    <a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.tajuk)} ↗</a>
+    <span class="m">${esc(x.platform)}${x.tarikh ? " · " + esc(tgl(x.tarikh)) : ""}${L("", " · in Malay")}</span>
+    ${withClaims ? "" : `<span class="m">${who}</span>`}
+    ${x.nota ? `<span class="m">${esc(x.nota)}</span>` : ""}
+    ${claims ? `<span class="acts" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center"><span class="m">${L("Dakwaan:","Claims:")}</span>${claims}</span>` : ""}
+    <span class="btns">
+      ${isFb(x.url) && !ART ? `<button class="btn alt fbbtn" type="button" data-fb="${esc(x.url)}">${L("Papar di sini","Show here")}</button>` : ""}
+      ${x.yt && !ART ? `<button class="btn alt ytbtn" type="button" data-yt="${esc(x.yt)}">▶ ${L("Tonton di sini","Watch here")}</button>` : ""}
+      ${x.tx && x.txOk && !ART ? `<button class="btn alt txbtn" type="button" data-tx="${esc(x.tx)}" data-yt="${esc(x.yt || "")}">${L("Transkrip","Transcript")}</button>` : (x.tx && !ART ? `<span class="m">${L("Transkrip sedang disediakan","Transcript in preparation")}</span>` : "")}
+    </span>
+    <div class="fbslot" hidden></div>
+  </li>`;
+}
 function sangHTML(d){
   if (!d.sang) return "";
-  return `<section class="sec panel"><h3>${L("Sanggahan The Patriots","Rebuttals by The Patriots")}</h3><ul class="sang">${d.sang.map((x, i) => `<li>
-    <a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.tajuk)} ↗</a>
-    <span class="m">${x.jenis === "bacaan" ? L("Bacaan berkaitan","Related reading") : L("Sanggahan","Rebuttal")}${L("", " (in Malay)")} · ${esc(x.platform)}${x.penulis ? " · " + esc(x.penulis) : ""}${x.tarikh ? " · " + esc(tgl(x.tarikh)) : ""}</span>
-    ${isFb(x.url) && !ART ? `<button class="btn alt fbbtn" type="button" data-fb="${esc(x.url)}">${L("Papar di sini","Show here")}</button><div class="fbslot" hidden></div>` : ""}
-  </li>`).join("")}</ul><p class="vnote">${L("Hantaran Facebook dimuatkan daripada Facebook hanya selepas anda klik “Papar di sini”.","Facebook posts load from Facebook only after you click “Show here”.")}</p></section>`;
+  const items = d.sang.map(i => SG[i]).filter(Boolean);
+  const groups = KAT.map(k => [k, items.filter(x => katOf(x) === k)]).filter(([, xs]) => xs.length);
+  return `<section class="sec panel"><h3>${L("Sanggahan & pandangan pakar","Rebuttals & expert views")}</h3>
+    ${groups.map(([k, xs]) => `<p class="ruj-h" style="margin:12px 0 8px">${esc(katL(k))}</p><ul class="sang">${xs.map(x => sgItemHTML(x, false)).join("")}</ul>`).join("")}
+    <p class="vnote">${L("Hantaran Facebook dan video dimuatkan hanya selepas anda klik.","Facebook posts and videos load only after you click.")} <a href="#sanggahan">${L("Lihat semua penyanggah","See all rebuttal authors")} →</a></p></section>`;
 }
 function bindSang(){
+  document.querySelectorAll(".ytbtn").forEach(b => b.addEventListener("click", () => {
+    const slot = b.closest("li").querySelector(".fbslot");
+    if (!slot.hidden && slot.dataset.k === "yt"){ slot.hidden = true; slot.innerHTML = ""; b.textContent = "▶ " + L("Tonton di sini","Watch here"); return; }
+    slot.dataset.k = "yt";
+    slot.innerHTML = `<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${esc(b.dataset.yt)}?rel=0" title="YouTube" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`;
+    slot.hidden = false; b.textContent = L("Tutup video","Close video");
+  }));
+  document.querySelectorAll(".txbtn").forEach(b => b.addEventListener("click", async () => {
+    const slot = b.closest("li").querySelector(".fbslot");
+    if (!slot.hidden && slot.dataset.k === "tx"){ slot.hidden = true; slot.innerHTML = ""; b.textContent = L("Transkrip","Transcript"); return; }
+    slot.dataset.k = "tx"; slot.hidden = false; slot.innerHTML = `<p class="empty">${L("Memuatkan transkrip…","Loading transcript…")}</p>`;
+    try {
+      const v = (document.querySelector('script[src^="data/arkib.js"]')?.getAttribute("src").split("v=")[1]) || "0";
+      const para = await (await fetch(`data/tx/${b.dataset.tx}.json?v=${v}`)).json();
+      const yt = b.dataset.yt;
+      slot.innerHTML = `<div class="txbox" lang="ms">${para.map(([s, t]) => `<p>${yt ? `<a href="https://www.youtube.com/watch?v=${esc(yt)}&t=${s}s" target="_blank" rel="noopener">${fmt(s)}</a>` : `<b>${fmt(s)}</b> `}${esc(t)}</p>`).join("")}</div>
+        <p class="vnote">${L("Transkrip automatik (Whisper); mungkin ada salah eja nama. Klik cap masa untuk tonton bahagian itu.","Automatic transcript (Whisper), in Malay; names may be misspelled. Click a timestamp to watch that part.")}</p>`;
+      b.textContent = L("Tutup transkrip","Close transcript");
+    } catch { slot.innerHTML = `<p class="empty">${L("Transkrip tak dapat dimuatkan.","The transcript could not be loaded.")}</p>`; }
+  }));
   document.querySelectorAll(".fbbtn").forEach(b => b.addEventListener("click", () => {
-    const slot = b.nextElementSibling;
-    if (!slot.hidden){ slot.hidden = true; slot.innerHTML = ""; b.textContent = L("Papar di sini","Show here"); return; }
+    const slot = b.closest("li").querySelector(".fbslot");
+    if (!slot.hidden && slot.dataset.k === "fb"){ slot.hidden = true; slot.innerHTML = ""; b.textContent = L("Papar di sini","Show here"); return; }
+    slot.dataset.k = "fb";
     const w = Math.max(350, Math.min(500, slot.parentElement.clientWidth - 4));
     slot.innerHTML = `<iframe title="${L("Hantaran Facebook","Facebook post")}" src="https://www.facebook.com/plugins/post.php?href=${encodeURIComponent(b.dataset.fb)}&show_text=true&width=${w}" width="${w}" height="760" style="border:0;overflow:hidden;max-width:100%;background:#fff;border-radius:8px" scrolling="no" frameborder="0" allowfullscreen allow="encrypted-media; picture-in-picture; web-share"></iframe>`;
     slot.hidden = false; b.textContent = L("Tutup hantaran","Close post");
@@ -749,6 +831,36 @@ function viewTikTok(){
     });
   });
 }
+function viewSanggahan(focus){
+  const count = id => SG.filter(x => x.oleh.includes(id)).length;
+  const jemput = SG.filter(x => x.jenis === "jemputan");
+  const card = o => {
+    const xs = SG.filter(x => x.oleh.includes(o.id)).sort((a, b) => b.i - a.i);
+    const cred = [
+      [L("Jawatan","Position"), esc(oF(o, "jawatan"))],
+      oF(o, "bidang") ? [L("Bidang","Field"), esc(oF(o, "bidang"))] : null,
+      oF(o, "nota") ? [L("Catatan","Note"), esc(oF(o, "nota"))] : null,
+      o.profil ? [L("Profil","Profile"), `<a href="${esc(o.profil)}" target="_blank" rel="noopener">${esc(o.profil.replace(/^https?:\/\/(www\.)?/, "").split("/")[0])} ↗</a>${o.sosial ? ` · <a href="${esc(o.sosial)}" target="_blank" rel="noopener">Facebook ↗</a>` : ""}`]
+               : (o.sosial ? [L("Profil","Profile"), `<a href="${esc(o.sosial)}" target="_blank" rel="noopener">Facebook ↗</a>`] : null),
+    ].filter(Boolean);
+    return `<details class="pp" id="s-${o.id}"${focus === o.id ? " open" : ""}>
+      <summary>${avatar(o)}<span style="min-width:0"><p class="pp-n">${esc(o.nama)}</p><p class="pp-j">${esc(oF(o, "jawatan"))}</p></span>
+        <span class="pp-c"><b>${xs.length}</b>${L("sanggahan","items")} <span class="chev">▾</span></span></summary>
+      <div class="pp-body"><dl class="pp-cred">${cred.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
+        <ul class="sang">${xs.map(x => sgItemHTML(x, true)).join("")}</ul></div></details>`;
+  };
+  app.innerHTML = `<div class="wrap prose" style="padding-bottom:0;max-width:none"><div class="eyebrow" style="margin-top:28px">${L("Siapa menyanggah","Who has responded")}</div>
+    <h1 style="font-size:clamp(32px,5vw,52px)">${L("Sanggahan","Rebuttals")}</h1>
+    <p class="lede" style="max-width:64ch">${L("Sejarawan, ahli arkeologi, penulis dan pengulas yang telah menjawab dakwaan Solehah Yaacob. Klik nama untuk lihat jawatan, bidang kepakaran (disemak daripada profil rasmi universiti) dan senarai sanggahan mereka.",
+      "Historians, archaeologists, writers and commentators who have responded to Solehah Yaacob's claims. Click a name to see their position, field of expertise (checked against official university profiles) and their rebuttals. Most rebuttals are in Malay.")}</p>
+    ${jemput.length ? `<div class="callout"><h3>${L("Jemputan berdialog yang dihantar kepada Solehah","Invitations to debate sent to Solehah")}</h3><ul class="sang">${jemput.map(x => sgItemHTML(x, false)).join("")}</ul></div>` : ""}
+  </div>
+  <div class="wrap">${KAT.map(k => { const os = PY.orang.filter(o => o.kategori === k && count(o.id)); return os.length ? `<h2 class="sg-h">${esc(katL(k))}</h2><div class="ppl">${os.map(card).join("")}</div>` : ""; }).join("")}
+    <p class="vnote" style="margin-top:18px">${L("Ada sanggahan lain oleh ahli akademik atau penulis? Hantar melalui butang “Hantar pembahasan” di halaman dakwaan berkenaan.","Know of another rebuttal by an academic or writer? Send it through the “Send a rebuttal” button on the relevant claim page.")}</p></div>`;
+  bindSang();
+  if (focus){ const el = document.getElementById("s-" + focus); if (el) setTimeout(() => el.scrollIntoView({block: "start"}), 50); }
+  else window.scrollTo(0, 0);
+}
 function viewKronologi(){
   const K = EN() && A.kronologi_en ? A.kronologi_en : A.kronologi;
   app.innerHTML = `<div class="wrap prose"><div class="eyebrow" style="margin-top:28px">${L("Garis masa","Timeline")}</div><h1 style="font-size:clamp(32px,5vw,52px)">${L("Kronologi","Timeline")}</h1>
@@ -789,7 +901,7 @@ function viewTentang(){
 
 function route(){
   const h = location.hash.slice(1);
-  const r = h.startsWith("d-") ? "detail" : h.startsWith("p-") ? "pdf" : (h || "home");
+  const r = h.startsWith("d-") ? "detail" : h.startsWith("p-") ? "pdf" : h.startsWith("s-") ? "sanggahan" : (h || "home");
   document.querySelectorAll(".nav nav a").forEach(a => {
     if (a.dataset.r === r || (r === "detail" && a.dataset.r === "home") || (r === "pdf" && a.dataset.r === "penerbitan")) a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
@@ -798,6 +910,7 @@ function route(){
   else if (r === "pdf") viewPdf(h.slice(2));
   else if (r === "penerbitan") viewPenerbitan();
   else if (r === "tiktok") viewTikTok();
+  else if (r === "sanggahan") viewSanggahan(h.startsWith("s-") ? h.slice(2) : "");
   else if (r === "fatal") viewHome(true);
   else if (r === "kronologi") viewKronologi();
   else if (r === "tentang") viewTentang();
