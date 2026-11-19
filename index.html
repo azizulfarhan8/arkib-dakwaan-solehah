@@ -88,6 +88,14 @@ button,input,select{font:inherit;color:inherit}
 .txbox a{font:500 12px var(--f-mono);color:var(--gold);margin-right:6px}
 .who{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:600}
 @media (max-width:560px){.pp>summary{grid-template-columns:48px 1fr;}.pp-c{grid-column:2;text-align:left}.pp-c b{display:inline;margin-right:4px;font-size:16px}.av{width:48px;height:48px;font-size:17px}.pp-cred{grid-template-columns:1fr}}
+.art{border:1px solid var(--rule);border-left:3px solid var(--gold);border-radius:8px;margin:0 0 12px;background:var(--paper)}
+.art>summary{cursor:pointer;display:flex;flex-direction:column;gap:3px;padding:10px 12px;list-style:none}
+.art>summary::-webkit-details-marker{display:none}
+.art-t{font:600 16px/1.35 var(--f-body)}
+.art-b{padding:0 14px;max-height:70vh;overflow:auto;font-size:15px;line-height:1.7}
+.art-b p{margin:0 0 10px;overflow-wrap:anywhere}
+.art .vnote{padding:0 14px 10px}
+.sg-img{display:block;max-width:min(100%,420px);margin-top:6px;border:1px solid var(--rule);border-radius:6px}
 .orig{margin:-8px 0 16px;font-size:14px;color:var(--ink-2);max-width:68ch}
 .orig b{font:600 11px/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;margin-right:6px}
 
@@ -215,6 +223,8 @@ section.sec{margin-top:22px}
 .ruj{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;margin:-6px 0 20px;padding:10px 14px;border:1px solid var(--rule);border-left:3px solid var(--betul);border-radius:6px;background:var(--card);font-size:14px}
 .ruj-h{font:600 11px/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--betul);flex-basis:100%}
 .ruj a{color:var(--ink);overflow-wrap:anywhere}
+.rj{font:600 10px/1 var(--f-mono);letter-spacing:.05em;text-transform:uppercase;padding:3px 5px;border-radius:3px;color:var(--ink-2);background:var(--belum-bg)}
+.rj-jurnal,.rj-buku{color:var(--betul);background:var(--betul-bg)} .rj-rasmi{color:var(--seb);background:var(--seb-bg)}
 /* penerbitan + pembaca PDF */
 .pubs{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .pub{display:grid;grid-template-columns:64px 1fr;gap:14px;padding:14px 16px;background:var(--card);border:1px solid var(--rule);border-radius:8px}
@@ -305,9 +315,9 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-block:22px calc(
 </svg>
 </template>
 
-<script src="config.js?v=202611182054"></script>
-<script src="data/penerbitan.js?v=202611182054"></script>
-<script src="data/arkib.js?v=202611182054"></script>
+<script src="config.js?v=202611191122"></script>
+<script src="data/penerbitan.js?v=202611191122"></script>
+<script src="data/arkib.js?v=202611191122"></script>
 <script>
 (function(){
 const A = window.ARKIB, C = window.ARKIB_CONFIG || {};
@@ -505,6 +515,7 @@ const oF = (o, k) => EN() && o[k + "_en"] ? o[k + "_en"] : o[k];
 const GELARAN = /^(Prof\.?|Profesor|Madya|Emeritus|Datuk|Dato'?|Ir|Dr|The)$/;
 const inisial = n => n.split(/\s+/).filter(w => !GELARAN.test(w) && /^[A-Z]/.test(w)).slice(0, 2).map(w => w[0]).join("");
 const avatar = (o, sm) => o.foto ? `<img class="av${sm ? " sm" : ""}" src="penyanggah/${esc(o.foto)}" alt="" width="64" height="64" loading="lazy">` : `<span class="av${sm ? " sm" : ""}" aria-hidden="true">${esc(inisial(o.nama))}</span>`;
+const RJ = {jurnal: ["Jurnal","Journal"], buku: ["Buku","Book"], rasmi: ["Rasmi","Official"], berita: ["Berita","News"], wiki: ["Wiki","Wiki"]};
 const JN = {sanggahan: ["Sanggahan","Rebuttal"], bacaan: ["Bacaan pakar","Expert reading"], jemputan: ["Jemputan dialog","Invitation to debate"]};
 const jnL = j => (JN[j] || JN.sanggahan)[EN() ? 1 : 0];
 const katOf = x => (PG[x.oleh[0]] || {}).kategori || "penulis";
@@ -517,14 +528,24 @@ function sgItemHTML(x, withClaims){
     <span class="m">${esc(x.platform)}${x.tarikh ? " · " + esc(tgl(x.tarikh)) : ""}${L("", " · in Malay")}</span>
     ${withClaims ? "" : `<span class="m">${who}</span>`}
     ${x.nota ? `<span class="m">${esc(x.nota)}</span>` : ""}
+    ${x.gambar ? `<a href="${esc(x.gambar)}" target="_blank" rel="noopener"><img class="sg-img" src="${esc(x.gambar)}" alt="${esc(x.tajuk)}" loading="lazy"></a>` : ""}
     ${claims ? `<span class="acts" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center"><span class="m">${L("Dakwaan:","Claims:")}</span>${claims}</span>` : ""}
     <span class="btns">
       ${isFb(x.url) && !ART ? `<button class="btn alt fbbtn" type="button" data-fb="${esc(x.url)}">${L("Papar di sini","Show here")}</button>` : ""}
+      ${x.fbv && !ART ? `<button class="btn alt fbvbtn" type="button" data-fbv="${esc(x.fbv)}">▶ ${L("Tonton di sini","Watch here")}</button>` : ""}
       ${x.yt && !ART ? `<button class="btn alt ytbtn" type="button" data-yt="${esc(x.yt)}">▶ ${L("Tonton di sini","Watch here")}</button>` : ""}
       ${x.tx && x.txOk && !ART ? `<button class="btn alt txbtn" type="button" data-tx="${esc(x.tx)}" data-yt="${esc(x.yt || "")}">${L("Transkrip","Transcript")}</button>` : (x.tx && !ART ? `<span class="m">${L("Transkrip sedang disediakan","Transcript in preparation")}</span>` : "")}
     </span>
     <div class="fbslot" hidden></div>
   </li>`;
+}
+const ART_ = A.artikel || [];
+function artHTML(d){
+  if (!d.art) return "";
+  return d.art.map((i, k) => { const a = ART_[i]; if (!a) return ""; const o = PG[a.oleh] || {nama: a.oleh};
+    return `<details class="art"${k === 0 ? " open" : ""}><summary><span class="who">${o.id ? avatar(o, true) : ""}${esc(o.nama)}</span><span class="art-t">${esc(a.tajuk)}</span><span class="m">${esc(tgl(a.tarikh))}${L("", " · in Malay")}</span></summary>
+      <div class="art-b" lang="ms">${a.perenggan.map(p => `<p>${esc(p)}</p>`).join("")}</div>
+      <p class="vnote">${L(esc(a.asal || ""), "Originally published on the author's earlier Facebook account; compiled by the author for this archive.")}${a.menjawab ? ` <a href="${esc(a.menjawab)}" target="_blank" rel="noopener">${L("Hantaran yang dijawab","The post being answered")} ↗</a>` : ""}${o.id ? ` · <a href="#s-${o.id}">${L("Profil penulis","Author profile")}</a>` : ""}</p></details>`; }).join("");
 }
 function sangHTML(d){
   if (!d.sang) return "";
@@ -535,6 +556,13 @@ function sangHTML(d){
     <p class="vnote">${L("Hantaran Facebook dan video dimuatkan hanya selepas anda klik.","Facebook posts and videos load only after you click.")} <a href="#sanggahan">${L("Lihat semua penyanggah","See all rebuttal authors")} →</a></p></section>`;
 }
 function bindSang(){
+  document.querySelectorAll(".fbvbtn").forEach(b => b.addEventListener("click", () => {
+    const slot = b.closest("li").querySelector(".fbslot");
+    if (!slot.hidden && slot.dataset.k === "fbv"){ slot.hidden = true; slot.innerHTML = ""; b.textContent = "▶ " + L("Tonton di sini","Watch here"); return; }
+    slot.dataset.k = "fbv";
+    slot.innerHTML = `<div class="fbvideo"><iframe title="Facebook" src="https://www.facebook.com/plugins/video.php?href=${encodeURIComponent("https://www.facebook.com/watch/?v=" + b.dataset.fbv)}&show_text=false&width=360" scrolling="no" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture; web-share"></iframe></div>`;
+    slot.hidden = false; b.textContent = L("Tutup video","Close video");
+  }));
   document.querySelectorAll(".ytbtn").forEach(b => b.addEventListener("click", () => {
     const slot = b.closest("li").querySelector(".fbslot");
     if (!slot.hidden && slot.dataset.k === "yt"){ slot.hidden = true; slot.innerHTML = ""; b.textContent = "▶ " + L("Tonton di sini","Watch here"); return; }
@@ -620,14 +648,14 @@ function viewDetail(id){
     <div class="crumb"><a href="#">${L("Semua dakwaan","All claims")}</a> / ${esc(s.id)} · ${esc(sF(s, "tarikh"))} / <b>${esc(id)}</b>${d.fatal ? ` · <span class="fatalno">FATAL #${d.fatal}</span>` : ""}</div>
     <blockquote class="claim-q">${esc(tx)}</blockquote>
     ${EN() && d.en ? `<p class="orig" lang="ms"><b>Original (Malay)</b>${esc(d.t)}</p>` : ""}
-    <div class="verdict-box">${pill(d.v)}<p>${note ? esc(note) : (d.v ? "" : L("Dakwaan ini belum disemak. Ada sumber yang membuktikan atau mematahkannya? Hantar pembahasan.","This claim has not been checked yet. Have a source that proves or refutes it? Send a rebuttal."))}${d.awal ? `<br><span class="vnote" style="font-style:italic">${L("Semakan awal oleh pasukan arkib; belum disahkan oleh pakar bidang. Ada pembetulan? Hantar pembahasan.","Preliminary check by the archive team; not yet confirmed by a subject expert. Have a correction? Send a rebuttal.")}</span>` : ""}</p></div>
+    <div class="verdict-box">${pill(d.v)}<p>${note ? esc(note) : (d.v ? "" : L("Dakwaan ini belum disemak. Ada sumber yang membuktikan atau mematahkannya? Hantar pembahasan.","This claim has not been checked yet. Have a source that proves or refutes it? Send a rebuttal."))}${d.semak ? `<br><span class="vnote">${L("Disemak oleh","Checked by")} ${(() => { const o = PY.orang.find(p => p.nama.toLowerCase().includes(d.semak.toLowerCase()) || d.semak.toLowerCase().includes(p.nama.toLowerCase())); return o ? `<a class="who" href="#s-${o.id}">${avatar(o, true)}${esc(o.nama)}</a>` : esc(d.semak); })()}</span>` : ""}${d.awal ? `<br><span class="vnote" style="font-style:italic">${L("Semakan awal oleh pasukan arkib; belum disahkan oleh pakar bidang. Ada pembetulan? Hantar pembahasan.","Preliminary check by the archive team; not yet confirmed by a subject expert. Have a correction? Send a rebuttal.")}</span>` : ""}</p></div>
     ${d.p ? `<p class="orig" lang="ms"><b>${L("Petikan transkrip","Transcript excerpt")}</b>“${esc(d.p)}”</p>` : ""}
     ${d.ulang ? `<p class="orig"><b>${L("Turut disebut dalam","Also said in")} ${d.ulang.length} ${L("video lain","other videos")}</b>${d.ulang.slice(0, 12).map((u, k) => `<a href="https://www.tiktok.com/@solehah_yaacob/video/${esc(u.tt)}" target="_blank" rel="noopener" title="${esc(u.p || "")}">TikTok ${k + 1} ↗</a>`).join(" · ")}${d.ulang.length > 12 ? " …" : ""}</p>` : ""}
-    ${d.ruj ? `<div class="ruj"><span class="ruj-h">${L("Bukti &amp; rujukan","Evidence &amp; references")}</span>${d.ruj.map(r => `<a href="${esc(r.u)}" target="_blank" rel="noopener">${esc(EN() && r.le ? r.le : r.l)} ↗</a>`).join("")}</div>` : ""}
+    ${d.ruj ? `<div class="ruj"><span class="ruj-h">${L("Bukti &amp; rujukan","Evidence &amp; references")}</span>${d.ruj.map(r => `<span>${r.j ? `<span class="rj rj-${esc(r.j)}">${esc(RJ[r.j] ? RJ[r.j][EN() ? 1 : 0] : r.j)}</span> ` : ""}<a href="${esc(r.u)}" target="_blank" rel="noopener">${esc(EN() && r.le ? r.le : r.l)} ↗</a></span>`).join("")}</div>` : ""}
     <div class="grid2">
       <div>${videoHTML(c)}
         ${sangHTML(d)}
-        <section class="sec panel"><h3>${L("Pembahasan","Rebuttals")}</h3>${pemb || `<p class="empty">${L("Belum ada pembahasan yang diluluskan untuk dakwaan ini.","No approved rebuttals for this claim yet.")}</p>`}
+        <section class="sec panel"><h3>${L("Pembahasan","Rebuttals")}</h3>${artHTML(d)}${pemb || (d.art ? "" : `<p class="empty">${L("Belum ada pembahasan yang diluluskan untuk dakwaan ini.","No approved rebuttals for this claim yet.")}</p>`)}
           <div class="btns">${purl ? `<a class="btn" href="${esc(purl)}" target="_blank" rel="noopener">${L("Hantar pembahasan","Send a rebuttal")} ↗</a>` : `<span class="empty">${L("Borang pembahasan belum disambungkan.","The rebuttal form is not connected yet.")}</span>`}</div>
           <p class="vnote">${L("Pembahasan disemak dahulu sebelum dipaparkan. Sertakan sumber (buku, jurnal, manuskrip, link).","Rebuttals are reviewed before they are shown. Include sources (books, journals, manuscripts, links). The form is in Malay; you may answer in English.")}</p></section>
         <section class="sec panel"><h3>${L("Komen","Comments")}</h3><div id="giscus"></div></section>
