@@ -95,6 +95,7 @@ button,input,select{font:inherit;color:inherit}
 .art-b{padding:0 14px;max-height:70vh;overflow:auto;font-size:15px;line-height:1.7}
 .art-b p{margin:0 0 10px;overflow-wrap:anywhere}
 .art .vnote{padding:0 14px 10px}
+.art-img{display:block;max-width:100%;margin:6px 0 12px;border:1px solid var(--rule);border-radius:6px}
 .sg-img{display:block;max-width:min(100%,420px);margin-top:6px;border:1px solid var(--rule);border-radius:6px}
 .orig{margin:-8px 0 16px;font-size:14px;color:var(--ink-2);max-width:68ch}
 .orig b{font:600 11px/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;margin-right:6px}
@@ -315,9 +316,9 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-block:22px calc(
 </svg>
 </template>
 
-<script src="config.js?v=202611191122"></script>
-<script src="data/penerbitan.js?v=202611191122"></script>
-<script src="data/arkib.js?v=202611191122"></script>
+<script src="config.js?v=202611191143"></script>
+<script src="data/penerbitan.js?v=202611191143"></script>
+<script src="data/arkib.js?v=202611191143"></script>
 <script>
 (function(){
 const A = window.ARKIB, C = window.ARKIB_CONFIG || {};
@@ -544,7 +545,7 @@ function artHTML(d){
   if (!d.art) return "";
   return d.art.map((i, k) => { const a = ART_[i]; if (!a) return ""; const o = PG[a.oleh] || {nama: a.oleh};
     return `<details class="art"${k === 0 ? " open" : ""}><summary><span class="who">${o.id ? avatar(o, true) : ""}${esc(o.nama)}</span><span class="art-t">${esc(a.tajuk)}</span><span class="m">${esc(tgl(a.tarikh))}${L("", " · in Malay")}</span></summary>
-      <div class="art-b" lang="ms">${a.perenggan.map(p => `<p>${esc(p)}</p>`).join("")}</div>
+      <div class="art-b" lang="ms">${(a.gambar || []).map(g => `<a href="${esc(g)}" target="_blank" rel="noopener"><img class="art-img" src="${esc(g)}" alt="" loading="lazy"></a>`).join("")}${a.perenggan.map(p => `<p>${esc(p)}</p>`).join("")}</div>
       <p class="vnote">${L(esc(a.asal || ""), "Originally published on the author's earlier Facebook account; compiled by the author for this archive.")}${a.menjawab ? ` <a href="${esc(a.menjawab)}" target="_blank" rel="noopener">${L("Hantaran yang dijawab","The post being answered")} ↗</a>` : ""}${o.id ? ` · <a href="#s-${o.id}">${L("Profil penulis","Author profile")}</a>` : ""}</p></details>`; }).join("");
 }
 function sangHTML(d){
