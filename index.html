@@ -322,9 +322,9 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-block:22px calc(
 </svg>
 </template>
 
-<script src="config.js?v=202611191150"></script>
-<script src="data/penerbitan.js?v=202611191150"></script>
-<script src="data/arkib.js?v=202611191150"></script>
+<script src="config.js?v=202611191159"></script>
+<script src="data/penerbitan.js?v=202611191159"></script>
+<script src="data/arkib.js?v=202611191159"></script>
 <script>
 (function(){
 const A = window.ARKIB, C = window.ARKIB_CONFIG || {};
@@ -884,10 +884,11 @@ function viewTikTok(){
   });
 }
 function viewSanggahan(focus){
-  const count = id => SG.filter(x => x.oleh.includes(id)).length;
-  const jemput = SG.filter(x => x.jenis === "jemputan");
+  const count = id => SG.filter(x => x.oleh.includes(id)).length + ART_.filter(a => a.oleh === id).length;
+  const jemput = SG.filter(x => x.kritikal).sort((a, b) => (b.jenis === "jemputan") - (a.jenis === "jemputan") || b.i - a.i);
   const card = o => {
     const xs = SG.filter(x => x.oleh.includes(o.id)).sort((a, b) => b.i - a.i);
+    const arts = ART_.map((a, i) => [a, i]).filter(([a]) => a.oleh === o.id);
     const cred = [
       [L("Jawatan","Position"), esc(oF(o, "jawatan"))],
       oF(o, "bidang") ? [L("Bidang","Field"), esc(oF(o, "bidang"))] : null,
@@ -897,15 +898,15 @@ function viewSanggahan(focus){
     ].filter(Boolean);
     return `<details class="pp" id="s-${o.id}"${focus === o.id ? " open" : ""}>
       <summary>${avatar(o)}<span style="min-width:0"><p class="pp-n">${esc(o.nama)}</p><p class="pp-j">${esc(oF(o, "jawatan"))}</p></span>
-        <span class="pp-c"><b>${xs.length}</b>${L("sanggahan","items")} <span class="chev">▾</span></span></summary>
+        <span class="pp-c"><b>${xs.length + arts.length}</b>${L("sanggahan","items")} <span class="chev">▾</span></span></summary>
       <div class="pp-body"><dl class="pp-cred">${cred.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
-        <ul class="sang">${xs.map(x => sgItemHTML(x, true)).join("")}</ul></div></details>`;
+        <ul class="sang">${arts.map(([a]) => `<li><span><span class="jn jn-sanggahan">${L("Artikel pembahasan","Rebuttal article")}</span></span><a href="#d-${esc(a.dakwaan[0])}">${esc(a.tajuk)} →</a><span class="m">${esc(tgl(a.tarikh))} · ${L("dipaparkan penuh di bawah dakwaan berkaitan","shown in full under the related claims")}${L("", " · in Malay")}</span><span class="acts" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center"><span class="m">${L("Dakwaan:","Claims:")}</span>${a.dakwaan.map(id => `<a class="chip" href="#d-${id}">${id}</a>`).join("")}</span></li>`).join("")}${xs.map(x => sgItemHTML(x, true)).join("")}</ul></div></details>`;
   };
   app.innerHTML = `<div class="wrap prose" style="padding-bottom:0;max-width:none"><div class="eyebrow" style="margin-top:28px">${L("Siapa menyanggah","Who has responded")}</div>
     <h1 style="font-size:clamp(32px,5vw,52px)">${L("Sanggahan","Rebuttals")}</h1>
     <p class="lede" style="max-width:64ch">${L("Sejarawan, ahli arkeologi, penulis dan pengulas yang telah menjawab dakwaan Solehah Yaacob. Klik nama untuk lihat jawatan, bidang kepakaran (disemak daripada profil rasmi universiti) dan senarai sanggahan mereka.",
       "Historians, archaeologists, writers and commentators who have responded to Solehah Yaacob's claims. Click a name to see their position, field of expertise (checked against official university profiles) and their rebuttals. Most rebuttals are in Malay.")}</p>
-    ${jemput.length ? `<div class="callout"><h3>${L("Jemputan berdialog yang dihantar kepada Solehah","Invitations to debate sent to Solehah")}</h3><ul class="sang">${jemput.map(x => sgItemHTML(x, false)).join("")}</ul></div>` : ""}
+    ${jemput.length ? `<div class="callout"><h3>${L("Sorotan kritikal","Key highlights")}</h3><p class="vnote" style="margin:0 0 8px">${L("Jemputan berdialog yang tidak dijawab, serta teguran sejarawan, ahli arkeologi, mufti dan ahli hadis.","Unanswered invitations to debate, and responses from historians, archaeologists, a mufti and hadith scholars.")}</p><ul class="sang">${jemput.map(x => sgItemHTML(x, false)).join("")}</ul></div>` : ""}
   </div>
   <div class="wrap">${KAT.map(k => { const os = PY.orang.filter(o => o.kategori === k && count(o.id)); return os.length ? `<h2 class="sg-h">${esc(katL(k))}</h2><div class="ppl">${os.map(card).join("")}</div>` : ""; }).join("")}
     <p class="vnote" style="margin-top:18px">${L("Ada sanggahan lain oleh ahli akademik atau penulis? Hantar melalui butang “Hantar pembahasan” di halaman dakwaan berkenaan.","Know of another rebuttal by an academic or writer? Send it through the “Send a rebuttal” button on the relevant claim page.")}</p></div>`;
