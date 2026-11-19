@@ -322,9 +322,9 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-block:22px calc(
 </svg>
 </template>
 
-<script src="config.js?v=202611191240"></script>
-<script src="data/penerbitan.js?v=202611191240"></script>
-<script src="data/arkib.js?v=202611191240"></script>
+<script src="config.js?v=202611191553"></script>
+<script src="data/penerbitan.js?v=202611191553"></script>
+<script src="data/arkib.js?v=202611191553"></script>
 <script>
 (function(){
 const A = window.ARKIB, C = window.ARKIB_CONFIG || {};
@@ -554,6 +554,7 @@ function sgItemHTML(x, withClaims){
     ${claims ? `<span class="acts" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center"><span class="m">${L("Dakwaan:","Claims:")}</span>${claims}</span>` : ""}
     <span class="btns">
       ${isFb(x.url) && !ART ? `<button class="btn alt fbbtn" type="button" data-fb="${esc(x.url)}">${L("Papar di sini","Show here")}</button>` : ""}
+      ${x.ttv && !ART ? `<button class="btn alt ttvbtn" type="button" data-ttv="${esc(x.ttv)}">▶ ${L("Tonton di sini","Watch here")}</button>` : ""}
       ${x.fbv && !ART ? `<button class="btn alt fbvbtn" type="button" data-fbv="${esc(x.fbv)}">▶ ${L("Tonton di sini","Watch here")}</button>` : ""}
       ${x.yt && !ART ? `<button class="btn alt ytbtn" type="button" data-yt="${esc(x.yt)}">▶ ${L("Tonton di sini","Watch here")}</button>` : ""}
       ${x.tx && x.txOk && !ART ? `<button class="btn alt txbtn" type="button" data-tx="${esc(x.tx)}" data-yt="${esc(x.yt || "")}">${L("Transkrip","Transcript")}</button>` : (x.tx && !ART ? `<span class="m">${L("Transkrip sedang disediakan","Transcript in preparation")}</span>` : "")}
@@ -578,6 +579,13 @@ function sangHTML(d){
     <p class="vnote">${L("Hantaran Facebook dan video dimuatkan hanya selepas anda klik.","Facebook posts and videos load only after you click.")} <a href="#sanggahan">${L("Lihat semua penyanggah","See all rebuttal authors")} →</a></p></section>`;
 }
 function bindSang(){
+  document.querySelectorAll(".ttvbtn").forEach(b => b.addEventListener("click", () => {
+    const slot = b.closest("li").querySelector(".fbslot");
+    if (!slot.hidden && slot.dataset.k === "ttv"){ slot.hidden = true; slot.innerHTML = ""; b.textContent = "▶ " + L("Tonton di sini","Watch here"); return; }
+    slot.dataset.k = "ttv";
+    slot.innerHTML = `<div class="ttvideo"><iframe title="TikTok" src="https://www.tiktok.com/player/v1/${esc(b.dataset.ttv)}?description=1&rel=0" allow="fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>`;
+    slot.hidden = false; b.textContent = L("Tutup video","Close video");
+  }));
   document.querySelectorAll(".fbvbtn").forEach(b => b.addEventListener("click", () => {
     const slot = b.closest("li").querySelector(".fbslot");
     if (!slot.hidden && slot.dataset.k === "fbv"){ slot.hidden = true; slot.innerHTML = ""; b.textContent = "▶ " + L("Tonton di sini","Watch here"); return; }
