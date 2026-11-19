@@ -140,6 +140,12 @@ h1{font:clamp(38px,7vw,74px)/.95 var(--f-old);margin:10px 0 12px;text-wrap:balan
 
 /* index */
 .src-h{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin:28px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--rule)}
+.grp>summary{list-style:none;cursor:pointer}
+.grp>summary::-webkit-details-marker{display:none}
+.grp>summary:hover h2{color:var(--gold)}
+.grp .chev{display:inline-block;transition:transform .15s}
+.grp[open] .chev{transform:rotate(180deg)}
+.grp>.rows{margin-bottom:6px}
 .src-h h2{font:20px/1.25 var(--f-old);margin:0;flex:1 1 300px;min-width:0;text-wrap:balance}
 .src-h .meta{font:12.5px var(--f-mono);color:var(--ink-2)}
 .rows{list-style:none;margin:0;padding:0;display:grid;gap:6px}
@@ -316,9 +322,9 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-block:22px calc(
 </svg>
 </template>
 
-<script src="config.js?v=202611191143"></script>
-<script src="data/penerbitan.js?v=202611191143"></script>
-<script src="data/arkib.js?v=202611191143"></script>
+<script src="config.js?v=202611191150"></script>
+<script src="data/penerbitan.js?v=202611191150"></script>
+<script src="data/arkib.js?v=202611191150"></script>
 <script>
 (function(){
 const A = window.ARKIB, C = window.ARKIB_CONFIG || {};
@@ -443,7 +449,7 @@ function heroHTML(){
 }
 function toolsHTML(){
   const opt = (v, l, cur) => `<option value="${v}"${cur===v?" selected":""}>${esc(l)}</option>`;
-  const susun = (st.fatal ? [["nombor", L("Ikut nombor 1–50","By number 1–50")]] : []).concat([["baru", L("Terbaru dahulu","Newest first")],["lama", L("Terlama dahulu","Oldest first")]]);
+  const susun = (st.fatal ? [["nombor", L("Ikut nombor 1–50","By number 1–50")]] : []).concat([["baru", L("Terbaru dahulu","Newest first")],["lama", L("Terlama dahulu","Oldest first")],["popular", L("Paling banyak diperkatakan","Most discussed")],["sanggah", L("Paling banyak sanggahan","Most rebutted")]]);
   const all_ = L("Semua","All");
   return `<div class="tools">
     <input type="search" id="q" placeholder="${L("Cari: Keturah, Kalah, Hang Tuah, meteor…","Search: Keturah, Kalah, Hang Tuah, meteor…")}" aria-label="${L("Cari dakwaan","Search claims")}" value="${esc(st.q)}">
@@ -457,6 +463,9 @@ function toolsHTML(){
     <button class="reset" id="reset" type="button"${(st.q||st.tahun||st.tema||st.v||st.klip) ? "" : " hidden"}>${L("Set semula","Reset")}</button>
   </div>`;
 }
+const nSang = d => (d.sang || []).length + (d.art || []).length + (d.pemb || []).length;
+const skorSanggah = d => nSang(d);
+const skorPopular = d => (d.ulang || []).length + 2 * nSang(d) + (d.ruj || []).filter(r => r.j === "berita" || /berita|news|post|malaysiakini|scoop|vibes|fmt|star|sinar|utusan|kosmo|bernama|asianews/i.test(r.l + r.u)).length + (d.fatal ? 3 : 0);
 function listHTML(){
   const hits = all.filter(match);
   let h = st.fatal
@@ -466,14 +475,25 @@ function listHTML(){
   // Sumber bertarikh disusun ikut tarikh; yang tarikhnya tak pasti sentiasa di hujung
   const dated = A.sumber.filter(s => tahunOf(s) !== "?"), undated = A.sumber.filter(s => tahunOf(s) === "?");
   const order = (st.susun === "lama" ? dated : [...dated].reverse()).concat(undated);
+  // Susunan ikut populariti: rata, tanpa kumpulan sumber
+  if (st.susun === "popular" || st.susun === "sanggah"){
+    const key = st.susun === "popular" ? skorPopular : skorSanggah;
+    const sorted = hits.map(c => [key(c.d), c]).filter(([k]) => k > 0).sort((a, b) => b[0] - a[0]).map(([, c]) => c);
+    const shown = sorted.slice(0, st.nTop || 100);
+    return h.replace(/<p class="count">.*?<\/p>/, `<p class="count">${L(`${sorted.length} dakwaan, disusun ${st.susun === "popular" ? "ikut paling banyak diperkatakan (diulang dalam video, disanggah, diliput)" : "ikut paling banyak sanggahan"}`, `${sorted.length} claims, sorted by ${st.susun === "popular" ? "how widely discussed (repeated in videos, rebutted, covered)" : "number of rebuttals"}`)}</p>`)
+      + `<ul class="rows">${shown.map(rowHTML).join("")}</ul>`
+      + (sorted.length > shown.length ? `<div class="btns" style="justify-content:center;margin:16px 0"><button class="btn" id="moreTop" type="button">${L("Tunjuk 100 lagi","Show 100 more")}</button></div>` : "");
+  }
   if (st.fatal){
     const rank = new Map(order.map((s, i) => [s, i]));
     const sorted = st.susun === "nombor" ? hits.sort((a,b) => a.d.fatal - b.d.fatal) : hits.sort((a,b) => rank.get(a.s) - rank.get(b.s) || a.d.fatal - b.d.fatal);
     return h + `<ul class="rows">${sorted.map(rowHTML).join("")}</ul>`;
   }
+  // Setiap sumber boleh dibuka/ditutup; terbuka secara automatik bila mencari/menapis atau keputusan sedikit
+  const buka = !!(st.q || st.tema || st.v || st.tahun || st.klip) || hits.length <= 60;
   order.forEach(s => {
     const cs = hits.filter(c => c.s === s); if (!cs.length) return;
-    h += `<div class="src-h"><h2>${esc(sF(s, "tajuk"))}</h2><span class="meta">${esc(s.id)} · ${esc(sF(s, "tarikh"))}${s.yt ? " · ▶ YouTube" : s.fb ? " · ▶ Facebook" : s.tt ? " · ▶ TikTok" : ""}</span></div><ul class="rows">${cs.map(rowHTML).join("")}</ul>`;
+    h += `<details class="grp"${buka ? " open" : ""}><summary class="src-h"><h2>${esc(sF(s, "tajuk"))}</h2><span class="meta">${esc(s.id)} · ${esc(sF(s, "tarikh"))}${s.yt ? " · ▶ YouTube" : s.fb ? " · ▶ Facebook" : s.tt ? " · ▶ TikTok" : ""} · <b>${cs.length}</b> ${L("dakwaan","claims")} <span class="chev">▾</span></span></summary><ul class="rows">${cs.map(rowHTML).join("")}</ul></details>`;
   });
   return h;
 }
@@ -483,7 +503,8 @@ function bindTools(){
     document.getElementById("reset").hidden = !(st.q || st.tahun || st.tema || st.v || st.klip);
   };
   document.getElementById("q").addEventListener("input", e => { st.q = e.target.value.trim(); re(); });
-  document.getElementById("susun").addEventListener("change", e => { st.susun = e.target.value; re(); });
+  document.getElementById("susun").addEventListener("change", e => { st.susun = e.target.value; st.nTop = 100; re(); });
+  document.getElementById("list").addEventListener("click", e => { if (e.target.closest("#moreTop")){ st.nTop = (st.nTop || 100) + 100; re(); } });
   document.getElementById("tahun").addEventListener("change", e => { st.tahun = e.target.value; re(); });
   document.getElementById("tema").addEventListener("change", e => { st.tema = e.target.value; re(); });
   document.getElementById("vv").addEventListener("change", e => { st.v = e.target.value; re(); });
